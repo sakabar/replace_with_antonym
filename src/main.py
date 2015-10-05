@@ -28,43 +28,6 @@ def get_katuyou_type(lemma, pos):
     # print pos
     raise lemma
 
-#元のget_changed_sentences()を分割中。よって、今のget_changed_sentences()は動かない。
-def get_changed_sentences(juman_lines):
-    ans = [""]
-
-
-    antonym_pat1 = re.compile("反義:[^ \"]+[^ \"$]")
-    antonym_pat2 = re.compile("[^:;]+:[^/]+/[^ \";]+")
-    antonym_pat3 = re.compile("[^:;]+:(?P<lemma>[^/]+)/[^ \";]+")
-    antonym_pat4 = re.compile("(?P<pos>[^:;]+)-?[^:]*:[^/]+/[^ \";]+")
-    pos_pat = re.compile("(?P<basic_pos>[^-]+)-.*")
-
-    for line in juman_lines:
-        match_obj = antonym_pat1.search(line)
-        if match_obj:
-            matched_list = antonym_pat2.findall(match_obj.group().replace("反義:", ""))
-            antonym_list = []
-            for antonym in matched_list:
-                lemma = antonym_pat3.search(antonym).group("lemma")
-                pos = antonym_pat4.search(antonym).group("pos")
-
-
-
-
-            if len(antonym_list) == 0:
-                #例外が発生して変換できなかった場合は、元の語をそのまま置く
-                word = line.split(' ')[0]
-                ans = [s + word for s in ans]
-
-            else:
-                ans = [s + ant for s in ans for ant in antonym_list]
-
-        else:
-            word = line.split(' ')[0]
-            ans = [s + word for s in ans]
-
-    return ans
-
 #Jumanの出力から@を取り除く
 #具体的には、あらゆるパターンを列挙
 #[[String]]を返す
@@ -126,7 +89,29 @@ def replace_one_word(enumerated_antonym_pairs):
 #例:「大きい村を守らないでください」
 #→[[(0,形容詞, 小さい)], [(3, 動詞, 攻める), (3, 動詞, 破る)]]
 def enumerate_antonym_pairs(disambiguated_juman_lines):
-    return [[(0,"形容詞", "小さい")], [(3, "動詞", "攻める"), (3, "動詞", "破る")]] #FIXME
+    ans = []
+
+    #パターン減らせるかもしれない。
+    antonym_pat1 = re.compile("反義:[^ \"]+[^ \"$]")
+    antonym_pat2 = re.compile("[^:;]+:[^/]+/[^ \";]+")
+    antonym_pat3 = re.compile("[^:;]+:(?P<lemma>[^/]+)/[^ \";]+")
+    antonym_pat4 = re.compile("(?P<pos>[^:;]+)-?[^:]*:[^/]+/[^ \";]+")
+
+    for ind, line in enumerate(disambiguated_juman_lines):
+        match_obj = antonym_pat1.search(line)
+
+        if match_obj:
+            matched_list = antonym_pat2.findall(match_obj.group().replace("反義:", ""))
+            antonym_list = []
+            for antonym in matched_list:
+                lemma = antonym_pat3.search(antonym).group("lemma")
+                pos = antonym_pat4.search(antonym).group("pos")
+                antonym_list.append((ind, pos, lemma))
+            ans.append(antonym_list)
+        else:
+            pass
+
+    return ans
 
 
 #antonym_pairsに従って置き換えた後の文字列を返す
@@ -195,6 +180,7 @@ def sentence_func(juman_lines):
             s = replace_with_antonym_pairs(disambiguated_juman_lines, antonym_pairs)
             ans.append(s)
 
+    ans = [s for s in ans if s != orig_str] #元の文は除く
     ans = list(set(ans)) #重複した文を削除
     for s in ans:
         print s
