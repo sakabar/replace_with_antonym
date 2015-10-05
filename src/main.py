@@ -43,7 +43,6 @@ def get_changed_sentences(juman_lines):
         match_obj = antonym_pat1.search(line)
         if match_obj:
             matched_list = antonym_pat2.findall(match_obj.group().replace("反義:", ""))
-            form = line.split(' ')[9]
             antonym_list = []
             for antonym in matched_list:
                 lemma = antonym_pat3.search(antonym).group("lemma")
@@ -88,22 +87,47 @@ def disambiguate_juman_line(juman_lines):
 
     return ans
 
-    #まず反義語を持つものを列挙
-def extract_antonym_pairs(disambiguated_juman_lines):
+#何をしたかったんだ、このメソッド…
+#しばらく経っても使わないならば、消しましょう
+# def extract_antonym_pairs(enum_antonym_pairs):
+#     ans = []
+
+
+#     # return ans
+#     #「広い」の場合
+#     return [[(0,"形容詞", "小さい")], (4, "動詞", "攻める")] #FIXME
+
+
+#「-してはいけません」の直後(にあるはず?)の語を置き換える
+#反義語を持つ単語のうち、一番文末に近い語のみ置き換える
+#FIXME repalce_one_wordと名前に統一感がない
+def extract_last_antonym_pairs(enumerated_antonym_pairs):
     ans = []
+    if len(enumerated_antonym_pairs) == 0:
+        return []
+    else:
+        return [[p] for p in enumerated_antonym_pairs[-1]]
 
-    #取ってきたい情報は、「何行目の、hogeという語をbarという語に置き換える」
-    #これでいいのかな?
-    #しないでください、から、ましょうに直すには活用形を変えないといけないはずだが…
-    #もうちょっと考えてから実装しよう。
-    for juman_line in disambiguated_juman_lines:
-        if "反義" in juman_line:
-            # print juman_line
-            pass
+#1語だけ置き換える
+# [[(0,形容詞, 小さい)], [(3, 動詞, 攻める), (3, 動詞, 破る)]]
+# →
+# [[(0,形容詞, 小さい)], [(3, 動詞, 攻める)], [(3, 動詞, 破る)]]
+#FIXME extract_last_antonym_pairsと名前に統一感がない
+def replace_one_word(enumerated_antonym_pairs):
+    ans = []
+    for antonym_pairs_lst in enumerated_antonym_pairs:
+        for pair in antonym_pairs_lst:
+            ans.append([pair])
 
-    # return ans
-    #「広い」の場合
-    return [(2, "形容詞", "狭い")] #FIXME
+    return ans
+
+
+#まず反義語を持つものを列挙
+#例:「大きい村を守らないでください」
+#→[[(0,形容詞, 小さい)], [(3, 動詞, 攻める), (3, 動詞, 破る)]]
+def enumerate_antonym_pairs(disambiguated_juman_lines):
+    return [[(0,"形容詞", "小さい")], [(3, "動詞", "攻める"), (3, "動詞", "破る")]] #FIXME
+
 
 #antonym_pairsに従って置き換えた後の文字列を返す
 #antonym_pairsに従うので、返す型は文字列のリストではない。1つのみ。
@@ -136,7 +160,7 @@ def replace_with_antonym_pairs(disambiguated_juman_lines, antonym_pairs):
         else:
             #活用がある
             s_exp = sexp.get_sexp("/Users/sak/local/src/juman-7.01/dic/JUMAN.katuyou")
-
+            form = line.split(' ')[9]
             katuyou_type = get_katuyou_type(lemma, pos)
             kihon = sexp.get_verb_katuyou(s_exp, katuyou_type, "基本形")
 
@@ -164,9 +188,12 @@ def sentence_func(juman_lines):
     #語の置き換え
     ans = []
     for disambiguated_juman_lines in juman_lines_list:
-        antonym_pairs = extract_antonym_pairs(disambiguated_juman_lines)
-        s = replace_with_antonym_pairs(disambiguated_juman_lines, antonym_pairs)
-        ans.append(s)
+        enumerated_antonym_pairs = enumerate_antonym_pairs(disambiguated_juman_lines)
+        # antonym_pairs_lst = extract_last_antonym_pairs(enumerated_antonym_pairs)
+        antonym_pairs_lst = replace_one_word(enumerated_antonym_pairs)
+        for antonym_pairs in   antonym_pairs_lst:
+            s = replace_with_antonym_pairs(disambiguated_juman_lines, antonym_pairs)
+            ans.append(s)
 
     ans = list(set(ans)) #重複した文を削除
     for s in ans:
