@@ -16,16 +16,19 @@ def search_lemma(lemma, line):
 #見出し語と品詞を引数として、詳細な品詞を返す(例:ナノ形容詞)
 #品詞を指定するのは、内容語と接尾辞で辞書ファイルが異なるため
 def get_katuyou_type(lemma, pos):
+    # juman_dir = "/Users/sak/local/src/juman-7.01"
+    juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
+
 
     pat2 = re.compile("\(活用型 (?P<pos>[^\)]+)\)")
 
     if "接尾辞" in pos:
-        for line in open("/Users/sak/local/src/juman-7.01/dic/Suffix.dic").readlines():
+        for line in open(juman_dir + "/dic/Suffix.dic").readlines():
                     line = line.rstrip()
                     if search_lemma(lemma, line):
                         return pat2.search(line).group("pos")
     else:
-        for line in open("/Users/sak/local/src/juman-7.01/dic/ContentW.dic").readlines():
+        for line in open(juman_dir + "/dic/ContentW.dic").readlines():
             line = line.rstrip()
             if search_lemma(lemma, line) and pat2.search(line):
                 # print lemma
@@ -153,7 +156,9 @@ def replace_with_antonym_pairs(disambiguated_juman_lines, antonym_pairs):
 
         else:
             #活用がある
-            s_exp = sexp.get_sexp("/Users/sak/local/src/juman-7.01/dic/JUMAN.katuyou")
+            #juman_dir = "/Users/sak/local/src/juman-7.01"
+            juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
+            s_exp = sexp.get_sexp(juman_dir + "/dic/JUMAN.katuyou")
             form = line.split(' ')[9]
             katuyou_type = get_katuyou_type(lemma, pos)
             kihon = sexp.get_verb_katuyou(s_exp, katuyou_type, "基本形")
