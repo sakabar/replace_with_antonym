@@ -4,21 +4,30 @@ import re
 import sexp
 import itertools
 
+def search_lemma(lemma, line):
+    pat1 = re.compile("見出し語[^\)]* %s[ \)]" % lemma)
+
+    #(動詞 ((読み 来る)(見出し語 (来る 0.8))(活用型 カ変動詞来)(意味情報 "代表表記:来る/くる 反義:動詞:帰る/かえる")))
+    #のように、見出し語に重みが付いている場合
+    pat2 = re.compile("見出し語[^\)]* \(%s [0-9\.]+\)" % lemma)
+
+    return pat1.search(line) or pat2.search(line)
+
 #見出し語と品詞を引数として、詳細な品詞を返す(例:ナノ形容詞)
 #品詞を指定するのは、内容語と接尾辞で辞書ファイルが異なるため
 def get_katuyou_type(lemma, pos):
-    pat = re.compile("見出し語 [^)]*%s[ )]" % lemma) #%s[ )]としているのは、「来る」に対して「来るべき(きたるべき)」がヒットしないようにするため。
+
     pat2 = re.compile("\(活用型 (?P<pos>[^\)]+)\)")
 
     if "接尾辞" in pos:
         for line in open("/Users/sak/local/src/juman-7.01/dic/Suffix.dic").readlines():
                     line = line.rstrip()
-                    if pat.search(line):
+                    if search_lemma(lemma, line):
                         return pat2.search(line).group("pos")
     else:
         for line in open("/Users/sak/local/src/juman-7.01/dic/ContentW.dic").readlines():
             line = line.rstrip()
-            if pat.search(line):
+            if search_lemma(lemma, line) and pat2.search(line):
                 # print lemma
                 # print line
                 return pat2.search(line).group("pos")
@@ -26,7 +35,7 @@ def get_katuyou_type(lemma, pos):
     #例外
     # print lemma
     # print pos
-    raise lemma
+    raise Exception("Error: get_katuyou_type(%s, %s)" % (lemma, pos))
 
 #Jumanの出力から@を取り除く
 #具体的には、あらゆるパターンを列挙
@@ -183,7 +192,7 @@ def sentence_func(juman_lines):
     ans = [s for s in ans if s != orig_str] #元の文は除く
     ans = list(set(ans)) #重複した文を削除
     for s in ans:
-        print s
+        print (orig_str + '\t' + s)
 
 def main():
     juman_lines = []
