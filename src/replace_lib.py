@@ -36,31 +36,36 @@ def get_katuyou_type(lemma, pos):
 
     raise Exception("Error: get_katuyou_type(%s, %s)" % (lemma, pos))
 
-#まず反義語を持つものを列挙
-#例:「大きい村を守らないでください」
-#→[[(0,形容詞, 小さい)], [(3, 動詞, 攻める), (3, 動詞, 破る)]]
-def enumerate_antonym_pairs(disambiguated_juman_lines):
-    ans = []
-
+def extract_antonym_from_token_line(ind, token_line):
     #パターン減らせるかもしれない。
     antonym_pat1 = re.compile("反義:[^ \"]+[^ \"$]")
     antonym_pat2 = re.compile("[^:;]+:[^/]+/[^ \";]+")
     antonym_pat3 = re.compile("[^:;]+:(?P<lemma>[^/]+)/[^ \";]+")
     antonym_pat4 = re.compile("(?P<pos>[^:;]+)-?[^:]*:[^/]+/[^ \";]+")
 
-    for ind, line in enumerate(disambiguated_juman_lines):
-        match_obj = antonym_pat1.search(line)
+    match_obj = antonym_pat1.search(token_line)
 
-        if match_obj:
-            matched_list = antonym_pat2.findall(match_obj.group().replace("反義:", ""))
-            antonym_list = []
-            for antonym in matched_list:
-                lemma = antonym_pat3.search(antonym).group("lemma")
-                pos = antonym_pat4.search(antonym).group("pos")
-                antonym_list.append((ind, pos, lemma))
+    if match_obj:
+        matched_list = antonym_pat2.findall(match_obj.group().replace("反義:", ""))
+        antonym_list = []
+        for antonym in matched_list:
+            lemma = antonym_pat3.search(antonym).group("lemma")
+            pos = antonym_pat4.search(antonym).group("pos")
+            antonym_list.append((ind, pos, lemma))
+        return antonym_list
+    else:
+        return []
+
+#まず反義語を持つものを列挙
+#例:「大きい村を守らないでください」
+#→[[(0,形容詞, 小さい)], [(3, 動詞, 攻める), (3, 動詞, 破る)]]
+def enumerate_antonym_pairs(disambiguated_juman_lines):
+    ans = []
+
+    for ind, line in enumerate(disambiguated_juman_lines):
+        antonym_list = extract_antonym_from_token_line(ind, line)
+        if len(antonym_list) != 0:
             ans.append(antonym_list)
-        else:
-            pass
 
     return ans
 
