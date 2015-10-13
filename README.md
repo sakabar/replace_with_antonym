@@ -4,7 +4,7 @@ Juman辞書に含まれている反義語の情報を利用して、文中に現
 ## Usage
     $cat input.txt
     海は広い。
-    $cat input.txt | juman | python src/main.py
+    $cat input.txt | juman | python src/replace_with_juman.py
     海は狭い。
 
 ## 既知の不具合
