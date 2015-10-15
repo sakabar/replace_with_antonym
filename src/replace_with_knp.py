@@ -35,13 +35,14 @@ def get_normalized_cand_form(knp_line):
     else:
         raise Exception('Error:' + knp_line)
 
-#文末の文節に反義語があった場合、反義語を置き換えてリストにして返す
+
+#indとhead_token_lineで指定したトークンに反義語が存在した場合、反義語を置き換えてリストにして返す
+#FIXME どう考えても、token_lines[ind] == head_token_lineの関係があるから、重複しているのでは…
 def replace_token_with_antonym(token_lines, ind, head_token_line):
     if any([(not is_token(line)) for line in token_lines]):
         raise Exception('argument error')
 
-    ind = [ind for ind, token_line in enumerate(token_lines) if token_line == head_token_line][0]
-    antonym_lst = replace_lib.extract_antonym_from_token_line(ind, head_token_line)
+    antonym_lst = replace_lib.extract_antonyms_from_token_line(ind, head_token_line)
 
     return [replace_lib.replace_with_antonym_pairs(token_lines, [antonym_pair]) for antonym_pair in antonym_lst]
 
