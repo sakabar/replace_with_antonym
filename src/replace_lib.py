@@ -4,41 +4,51 @@ import sexp
 import itertools
 
 
-def search_lemma(lemma, line):
+def search_lemma(lemma, yomi, line):
     pat1 = re.compile("見出し語[^\)]* %s[ \)]" % lemma)
 
     #(動詞 ((読み 来る)(見出し語 (来る 0.8))(活用型 カ変動詞来)(意味情報 "代表表記:来る/くる 反義:動詞:帰る/かえる")))
     #のように、見出し語に重みが付いている場合
     pat2 = re.compile("見出し語[^\)]* \(%s [0-9\.]+\)" % lemma)
+    pat3 = re.compile("\(読み %s\)" % yomi)
 
-    return pat1.search(line) or pat2.search(line)
+    return (pat1.search(line) or pat2.search(line)) and pat3.search(line)
+
+
+#Jumanに付属する辞書で単語を検索し、jumanのトークン出力のような形式の
+#文字列を返す
+#UNNEED
+# def search_word_from_juman_dic(pos, lemma, yomi):
+#     juman_dir = "/Users/sak/local/src/juman-7.01"
+#     # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
+
+#     return "aiii"
 
 
 #見出し語と品詞を引数として、詳細な品詞を返す(例:ナノ形容詞)
 #品詞を指定するのは、内容語と接尾辞で辞書ファイルが異なるため
-def get_katuyou_type(lemma, pos):
+def get_katuyou_type(lemma, yomi, pos):
     juman_dir = "/Users/sak/local/src/juman-7.01"
     # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
 
-
-    pat2 = re.compile("\(活用型 (?P<pos>[^\)]+)\)")
+    regex_of_katuyou_type = re.compile("\(活用型 (?P<pos>[^\)]+)\)")
 
     if "接尾辞" in pos:
-        for line in open(juman_dir + "/dic/Suffix.dic"):# .readlines(): readlines()を使うと一気に読み込まれて負荷がかかる。どうせ1行ずつforで読み込んでいるので、readlinesがなくても変わらない。
-                    line = line.rstrip()
-                    if search_lemma(lemma, line):
-                        return pat2.search(line).group("pos")
+        for line in open(juman_dir + "/dic/Suffix.dic"): # .readlines(): readlines()を使うと一気に読み込まれて負荷がかかる。どうせ1行ずつforで読み込んでいるので、readlinesがなくても変わらない。
+            line = line.rstrip()
+            if search_lemma(lemma, yomi, line):
+                return regex_of_katuyou_type.search(line).group("pos")
     else:
         for line in open(juman_dir + "/dic/ContentW.dic"):# .readlines():
             line = line.rstrip()
-            if search_lemma(lemma, line) and pat2.search(line):
-                return pat2.search(line).group("pos")
+            if search_lemma(lemma, yomi, line) and regex_of_katuyou_type.search(line):
+                return regex_of_katuyou_type.search(line).group("pos")
 
-    raise Exception("Error: get_katuyou_type(%s, %s)" % (lemma, pos))
+    raise Exception("Error: get_katuyou_type(%s, %s, %s)" % (lemma, yomi, pos))
 
 
 #表層の文字だけしか取っていなかったので、読みも取ってくるように変更
-def extract_antonym_from_token_line(ind, token_line):
+def extract_antonyms_from_token_line(ind, token_line):
     #パターン減らせるかもしれない。
     regex = re.compile('反義:([^:]+:[^/]+/[^;\"]+;?)+')
     match_obj = regex.search(token_line)
@@ -56,18 +66,21 @@ def extract_antonym_from_token_line(ind, token_line):
 #まず反義語を持つものを列挙
 #例:「大きい村を守らないでください」
 #→[[(0,形容詞, 小さい)], [(3, 動詞, 攻める), (3, 動詞, 破る)]]
-def enumerate_antonym_pairs(disambiguated_juman_lines):
-    ans = []
+#replace_with_juman.pyでしか使っていなかったので、カット。
+#今後はreplace_with_knp.pyのみを使いましょう。
+# def enumerate_antonym_pairs(disambiguated_juman_lines):
+#     ans = []
 
-    for ind, line in enumerate(disambiguated_juman_lines):
-        antonym_list = extract_antonym_from_token_line(ind, line)
-        if len(antonym_list) != 0:
-            ans.append(antonym_list)
+#     for ind, line in enumerate(disambiguated_juman_lines):
+#         #FIXME antonym
+#         antonym_list = extract_antonyms_from_token_line(ind, line)
+#         if len(antonym_list) != 0:
+#             ans.append(antonym_list)
 
-    return ans
+#     return ans
 
-#antonym_pairsに従って置き換えた後の文字列を返す
-#antonym_pairsに従うので、返す型は文字列のリストではない。1つのみ。
+#antonym_pairsとは: 例 [(0, 動詞, 攻める, せめる), (1, 形容詞, 大きい, おおきい), (3, 接尾辞-形容詞性述語接尾辞, やすい, やすい)]
+#antonym_pairsに従って置き換えた後の文字列(1つ)を返す
 def replace_with_antonym_pairs(disambiguated_juman_lines, antonym_pairs):
     ans_lines = [line.split(' ')[0] for line in disambiguated_juman_lines]
 
@@ -76,7 +89,7 @@ def replace_with_antonym_pairs(disambiguated_juman_lines, antonym_pairs):
     #例: [守る→破る, 守る→攻める]
 
 
-    for ind, pos, lemma in antonym_pairs:
+    for ind, pos, lemma, yomi in antonym_pairs:
         basic_pos = "".join(list(itertools.takewhile(lambda ch: ch != '-', pos))) #動くと思うけど、もっといい書き方ありそう
         line = disambiguated_juman_lines[ind]
 
@@ -100,7 +113,7 @@ def replace_with_antonym_pairs(disambiguated_juman_lines, antonym_pairs):
             # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
             s_exp = sexp.get_sexp(juman_dir + "/dic/JUMAN.katuyou")
             form = line.split(' ')[9]
-            katuyou_type = get_katuyou_type(lemma, pos)
+            katuyou_type = get_katuyou_type(lemma, yomi, pos)
             kihon = sexp.get_verb_katuyou(s_exp, katuyou_type, "基本形")
 
             pat1 = re.compile("%s$" % kihon)
