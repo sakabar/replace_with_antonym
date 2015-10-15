@@ -3,8 +3,109 @@ import re
 import sexp
 import itertools
 
+#活用させる
+def change_katuyou(token_line, katuyou):
+    juman_dir = "/Users/sak/local/src/juman-7.01"
+    # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
 
-def search_lemma(lemma, yomi, line):
+    s_exp = sexp.get_sexp(juman_dir + "/dic/JUMAN.katuyou")
+    yomi = token_line.split(' ')[1]
+    lemma = token_line.split(' ')[2]
+    pos = token_line.split(' ')[3]
+    orig_katuyou = token_line.split(' ')[9]
+    katuyou_type = token_line.split(' ')[7]
+    info = " ".join(token_line.split(' ')[11:]) #「"代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>」のように、スペースで区切られてしまっているのを結合する。
+
+    kihon_katuyou_gobi = sexp.get_verb_katuyou(s_exp, katuyou_type, "基本形")
+    orig_katuyou_gobi = sexp.get_verb_katuyou(s_exp, katuyou_type, orig_katuyou)
+
+    pat1 = re.compile("%s$" % kihon_katuyou_gobi)
+    pat2 = re.compile("%s$" % orig_katuyou_gobi)
+    gokan = re.sub(pat1, "", lemma) #基本形の部分を取る
+    yomi_gokan = re.sub(pat2, "", yomi)
+
+    try:
+        katuyou_gobi = sexp.get_verb_katuyou(s_exp, katuyou_type, katuyou)
+        katuyou_gobi = "" if katuyou_gobi == '*' else katuyou_gobi
+        surf = gokan + katuyou_gobi
+        new_yomi = yomi_gokan + katuyou_gobi
+        return juman_like_str(surf, new_yomi, lemma, pos, info, katuyou, katuyou_type)
+
+    except:
+        #変換しない
+        return line
+
+#例: 「走るな」→「走りましょう」
+def remove_negation_from_suruna(token_lines):
+    ans_lines = [s for s in token_lines]
+
+    #文末から見る
+    lst = [tmp for tmp in enumerate(token_lines)]
+    for ind, line in lst[::-1]:
+        if ind > 0 and line == 'な な な 助詞 9 終助詞 4 * 0 * 0 NIL <文末><表現文末><かな漢字><ひらがな><付属>' and ans_lines[ind-1].split(' ')[3] == '動詞' and ans_lines[ind-1].split(' ')[9] == "基本形":
+            ans_lines[ind-1] = change_katuyou(ans_lines[ind-1], "基本連用形")
+            ans_lines[ind] = 'ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"'
+            break
+    return ans_lines
+
+#例:「走ってはいけません」→「走りましょう」
+def remove_negation_from_ikemasen(token_lines):
+    ans_lines = [s for s in token_lines]
+
+    #文末から見る
+    lst = [tmp for tmp in enumerate(token_lines)]
+    for ind, line in lst[::-1]:
+        if ind-4 >= 0 and ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-4].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-3].split(' ')[0] == 'は' and (ans_lines[ind-2].split(' ')[0] == 'いけ' or ans_lines[ind-2].split(' ')[0] == 'なり') and ans_lines[ind-1].split(' ')[0] == 'ませ' and ans_lines[ind].split(' ')[0] == 'ん':
+            ans_lines_before= [] if ind-4 == 0 else ans_lines[0:ind-4]
+            ans_lines_after =  ans_lines[ind+1:]
+            verb = change_katuyou(ans_lines[ind-4], "基本連用形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.append('ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"')
+            ans.extend(ans_lines_after)
+            return ans
+
+    return ans_lines
+
+
+def remove_negation_from_naide_kudasai(token_lines):
+    ans_lines = [s for s in token_lines]
+
+    #文末から見る
+    lst = [tmp for tmp in enumerate(token_lines)]
+    for ind, line in lst[::-1]:
+        if ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == '未然形' and ans_lines[ind-1].split(' ')[0] == 'ないで' and ans_lines[ind].split(' ')[0] == 'ください':
+            ans_lines_before= [] if ind-2 == 0 else ans_lines[0:ind-2]
+            ans_lines_after =  ans_lines[ind+1:]
+            verb = change_katuyou(ans_lines[ind-2], "基本連用形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.append('ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"')
+            ans.extend(ans_lines_after)
+            return ans
+
+    return ans_lines
+
+
+
+def remove_negation_from_banning(token_lines):
+    orig_str = "".join(line.split(' ')[0] for line in token_lines)
+
+    if ("はいけません" in orig_str) or ("はなりません" in orig_str):
+        return remove_negation_from_ikemasen(token_lines)
+    elif ("ないでください" in orig_str):
+        return remove_negation_from_naide_kudasai(token_lines)
+    elif ("な" in orig_str):
+        return remove_negation_from_suruna(token_lines)
+    else:
+        return token_lines
+
+#jumanの辞書をサーチして、ヒットした行を返す
+#品詞を指定するのは、内容語と接尾辞で辞書ファイルが異なるため
+def search_lemma(pos, lemma, yomi):
+    juman_dir = "/Users/sak/local/src/juman-7.01"
+    # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
+
     pat1 = re.compile("見出し語[^\)]* %s[ \)]" % lemma)
 
     #(動詞 ((読み 来る)(見出し語 (来る 0.8))(活用型 カ変動詞来)(意味情報 "代表表記:来る/くる 反義:動詞:帰る/かえる")))
@@ -12,45 +113,45 @@ def search_lemma(lemma, yomi, line):
     pat2 = re.compile("見出し語[^\)]* \(%s [0-9\.]+\)" % lemma)
     pat3 = re.compile("\(読み %s\)" % yomi)
 
-    return (pat1.search(line) or pat2.search(line)) and pat3.search(line)
-
-
-#Jumanに付属する辞書で単語を検索し、jumanのトークン出力のような形式の
-#文字列を返す
-#UNNEED
-# def search_word_from_juman_dic(pos, lemma, yomi):
-#     juman_dir = "/Users/sak/local/src/juman-7.01"
-#     # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
-
-#     return "aiii"
-
-
-#見出し語と品詞を引数として、詳細な品詞を返す(例:ナノ形容詞)
-#品詞を指定するのは、内容語と接尾辞で辞書ファイルが異なるため
-def get_katuyou_type(lemma, yomi, pos):
-    juman_dir = "/Users/sak/local/src/juman-7.01"
-    # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
-
-    regex_of_katuyou_type = re.compile("\(活用型 (?P<pos>[^\)]+)\)")
 
     if "接尾辞" in pos:
         for line in open(juman_dir + "/dic/Suffix.dic"): # .readlines(): readlines()を使うと一気に読み込まれて負荷がかかる。どうせ1行ずつforで読み込んでいるので、readlinesがなくても変わらない。
             line = line.rstrip()
-            if search_lemma(lemma, yomi, line):
-                return regex_of_katuyou_type.search(line).group("pos")
+
+            if (pat1.search(line) or pat2.search(line)) and pat3.search(line):
+                return line
+
     else:
-        for line in open(juman_dir + "/dic/ContentW.dic"):# .readlines():
+        for line in open(juman_dir + "/dic/ContentW.dic"):
             line = line.rstrip()
-            if search_lemma(lemma, yomi, line) and regex_of_katuyou_type.search(line):
-                return regex_of_katuyou_type.search(line).group("pos")
 
-    raise Exception("Error: get_katuyou_type(%s, %s, %s)" % (lemma, yomi, pos))
+            if (pat1.search(line) or pat2.search(line)) and pat3.search(line):
+                return line
 
+    raise Exception("No Hit (%s, %s, %s)" % (pos, lemma, yomi))
+
+
+
+#元々は、get_katuyou_type
+#見出し語と品詞を引数として、詳細な品詞を返す(例:ナノ形容詞)
+#品詞を指定するのは、内容語と接尾辞で辞書ファイルが異なるため
+#Jumanに付属する辞書で単語を検索し、活用型と意味情報を要素とするタプルを返す
+def get_katuyou_type_and_info_from_juman_dic(pos, lemma, yomi):
+
+    regex_of_katuyou_type = re.compile("\(活用型 (?P<katuyou_type>[^\)]+)\)")
+    regex_of_meaning_info = re.compile("\(意味情報 (?P<info>\"[^\)]+\")\)")
+
+    line = search_lemma(pos, lemma, yomi)
+    m1 = regex_of_katuyou_type.search(line)
+    m2 = regex_of_meaning_info.search(line)
+    katuyou_type = m1.group("katuyou_type") if m1 else ""
+    meaning_info = m2.group("info") if m2 else ""
+
+    return (katuyou_type, meaning_info)
 
 #表層の文字だけしか取っていなかったので、読みも取ってくるように変更
 def extract_antonyms_from_token_line(ind, token_line):
-    #パターン減らせるかもしれない。
-    regex = re.compile('反義:([^:]+:[^/]+/[^;\"]+;?)+')
+    regex = re.compile('[ \"]反義:([^:]+:[^/]+/[^;\" >]+;?)+?[\" ]') #KNPによって付加された<反義:動詞:守る/まもる;動詞:防ぐ/ふせぐ>のような部分ではなく、Jumanの出力の段階で付与された意味情報を見るようにする (欲張らないマッチ)
     match_obj = regex.search(token_line)
 
     if match_obj:
@@ -58,8 +159,11 @@ def extract_antonyms_from_token_line(ind, token_line):
         #→  "動詞:攻める/せめる;動詞:破る/やぶる"
         #→  ["動詞:攻める/せめる", "動詞:破る/やぶる"]
 
-        antonyms = re.sub("^反義:", "", match_obj.group(0)).split(';')
-        return [(ind, antonym.split(':')[0], antonym.split(':')[1].split('/')[0], antonym.split(':')[1].split('/')[1]) for antonym in antonyms]
+        tmp_antonyms = re.sub("^.+反義:", "", match_obj.group(0))
+        antonyms = re.sub("[\" ]$" ,"", tmp_antonyms).split(';')
+        ans = [(ind, antonym.split(':')[0], antonym.split(':')[1].split('/')[0], antonym.split(':')[1].split('/')[1]) for antonym in antonyms]
+
+        return ans
     else:
         return []
 
@@ -79,55 +183,61 @@ def extract_antonyms_from_token_line(ind, token_line):
 
 #     return ans
 
+
+#にくい にくい にくい 接尾辞 14 形容詞性述語接尾辞 5 イ形容詞アウオ段 18 基本形 2 "代表表記:にくい/にくい 反義:接尾辞-形容詞性述語接尾辞:やすい/やすい"
+#引数の順番注意! infoは途中にある
+def juman_like_str(surf, yomi, lemma, pos, info="NIL", katuyou="*", katuyou_type="*", detail_pos="*"):
+    return "%s %s %s %s * %s * %s * %s * %s" % (surf, yomi, lemma, pos, detail_pos, katuyou_type, katuyou, info)
+
+def replace_juman_line_with_antonym(orig_line, pos, lemma, yomi):
+    basic_pos = "".join(list(itertools.takewhile(lambda ch: ch != '-', pos))) #動くと思うけど、もっといい書き方ありそう
+
+    if orig_line.split(' ')[7] == '*':
+        #活用がない → 反義語も活用しない
+        #というのはウソで、「ウソ(名詞)」→「本当だ(形容詞)」というパターンがある
+        #とりあえず、活用のことは考えず、単に置き換える
+        #FIXME
+        return juman_like_str(lemma, yomi, lemma, pos)
+
+    elif basic_pos != orig_line.split(' ')[3]:
+        #同じ品詞でない場合は変換しない(本当だ[形]→ウソ[名])
+        #「ウソだと思わないでください」→「本当だと思ってください」
+        #を変換しないということなので、ぐぬぬ…良くないぞ。
+        #FIXME
+        return orig_line
+
+    else:
+        #活用がある
+        katuyou = orig_line.split(' ')[9]
+        katuyou_type_of_ant, info_of_ant = get_katuyou_type_and_info_from_juman_dic(pos, lemma, yomi)
+        antonym_juman_like_str = juman_like_str(lemma, yomi, lemma, pos, info_of_ant, "基本形", katuyou_type_of_ant)
+        return change_katuyou(antonym_juman_like_str, katuyou)
+
+
+
+
+
+
+
 #antonym_pairsとは: 例 [(0, 動詞, 攻める, せめる), (1, 形容詞, 大きい, おおきい), (3, 接尾辞-形容詞性述語接尾辞, やすい, やすい)]
-#antonym_pairsに従って置き換えた後の文字列(1つ)を返す
-def replace_with_antonym_pairs(disambiguated_juman_lines, antonym_pairs):
-    ans_lines = [line.split(' ')[0] for line in disambiguated_juman_lines]
+#antonym_pairsに従って置き換えた後の文字列に対応する、jumanの行っぽいものを返す。
+def replace_with_antonym_pairs(token_lines, antonym_pairs):
+    ans_lines = [line for line in token_lines]
 
     #FIXME
     #antonym_pairsの中に、同じ単語を複数の反義語に置き換えるようなペアが入っていないかどうかチェック
     #例: [守る→破る, 守る→攻める]
+    ind_lst = [ind for ind, pos, lemma, yomi in antonym_pairs]
+    if len(ind_lst) != len(set(ind_lst)):
+        raise Exception("Replace to more than two words")
 
+    if len(antonym_pairs) == 0:
+        return token_lines
+    else:
+        for ind, pos, lemma, yomi in antonym_pairs:
+            ans_lines[ind] = replace_juman_line_with_antonym(token_lines[ind], pos, lemma, yomi)
 
-    for ind, pos, lemma, yomi in antonym_pairs:
-        basic_pos = "".join(list(itertools.takewhile(lambda ch: ch != '-', pos))) #動くと思うけど、もっといい書き方ありそう
-        line = disambiguated_juman_lines[ind]
-
-        if line.split(' ')[7] == '*':
-            #活用がない → 反義語も活用しない
-            #というのはウソで、「ウソ(名詞)」→「本当だ(形容詞)」というパターンがある
-            #とりあえず、活用のことは考えず、単に置き換える
-            #FIXME
-            ans_lines[ind] = lemma
-
-        elif basic_pos != line.split(' ')[3]:
-            #同じ品詞でない場合は変換しない(本当だ[形]→ウソ[名])
-            #「ウソだと思わないでください」→「本当だと思ってください」
-            #を変換しないということなので、ぐぬぬ…良くないぞ。
-            #FIXME
-            continue
-
-        else:
-            #活用がある
-            juman_dir = "/Users/sak/local/src/juman-7.01"
-            # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
-            s_exp = sexp.get_sexp(juman_dir + "/dic/JUMAN.katuyou")
-            form = line.split(' ')[9]
-            katuyou_type = get_katuyou_type(lemma, yomi, pos)
-            kihon = sexp.get_verb_katuyou(s_exp, katuyou_type, "基本形")
-
-            pat1 = re.compile("%s$" % kihon)
-            gokan = re.sub(pat1, "", lemma) #基本形の部分を取る
-
-            try:
-                katuyou = sexp.get_verb_katuyou(s_exp, katuyou_type, form)
-                katuyou = "" if katuyou == '*' else katuyou
-                ans_lines[ind] = gokan + katuyou
-            except:
-                #何もせずに、次の対義語ペアに進む
-                continue
-
-    return "".join(ans_lines)
+        return ans_lines
 
 #Jumanの出力から@を取り除く
 #具体的には、あらゆるパターンを列挙
