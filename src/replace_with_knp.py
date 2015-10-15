@@ -45,10 +45,6 @@ def replace_token_with_antonym(token_lines, ind, head_token_line):
 
     return [replace_lib.replace_with_antonym_pairs(token_lines, [antonym_pair]) for antonym_pair in antonym_lst]
 
-def replace_mod_chunk_token():
-    #FIXME
-    print "ここを置き換える"
-
 
 def get_head_token_of_chunk(knp_lines, chunk_ind):
     chunk_line = knp_lines[chunk_ind]
