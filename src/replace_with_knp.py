@@ -129,6 +129,7 @@ def sentence_func(knp_lines):
             except:
                 pass #FIXME ひどくない?
 
+    ans = ["".join([token.split(' ')[0] for token in token_lines]) for token_lines in ans]
     ans = [s for s in ans if s != orig_str] #元の文は除く
     ans = list(set(ans)) #重複した文を削除
     for s in ans:
