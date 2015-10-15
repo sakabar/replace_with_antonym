@@ -77,7 +77,7 @@ def remove_negation_from_naide_kudasai(token_lines):
     #文末から見る
     lst = [tmp for tmp in enumerate(token_lines)]
     for ind, line in lst[::-1]:
-        if ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == '未然形' and ans_lines[ind-1].split(' ')[0] == 'ないで' and ans_lines[ind].split(' ')[0] == 'ください':
+        if ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == '未然形' and ans_lines[ind-1].split(' ')[0] == 'ないで' and ans_lines[ind].split(' ')[1] == 'ください':
             ans_lines_before= [] if ind-2 == 0 else ans_lines[0:ind-2]
             ans_lines_after =  ans_lines[ind+1:]
             verb = change_katuyou(ans_lines[ind-2], "基本連用形")
