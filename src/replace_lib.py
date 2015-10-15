@@ -96,7 +96,7 @@ def remove_negation_from_banning(token_lines):
 
     if ("はいけません" in orig_str) or ("はなりません" in orig_str):
         return remove_negation_from_ikemasen(token_lines)
-    elif ("ないでください" in orig_str):
+    elif ("ないでください" in orig_str) or ("ないで下さい" in orig_str):
         return remove_negation_from_naide_kudasai(token_lines)
     elif ("な" in orig_str):
         return remove_negation_from_suruna(token_lines)
