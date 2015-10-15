@@ -24,12 +24,12 @@ def get_katuyou_type(lemma, pos):
     pat2 = re.compile("\(活用型 (?P<pos>[^\)]+)\)")
 
     if "接尾辞" in pos:
-        for line in open(juman_dir + "/dic/Suffix.dic").readlines():
+        for line in open(juman_dir + "/dic/Suffix.dic"):# .readlines(): readlines()を使うと一気に読み込まれて負荷がかかる。どうせ1行ずつforで読み込んでいるので、readlinesがなくても変わらない。
                     line = line.rstrip()
                     if search_lemma(lemma, line):
                         return pat2.search(line).group("pos")
     else:
-        for line in open(juman_dir + "/dic/ContentW.dic").readlines():
+        for line in open(juman_dir + "/dic/ContentW.dic"):# .readlines():
             line = line.rstrip()
             if search_lemma(lemma, line) and pat2.search(line):
                 return pat2.search(line).group("pos")
