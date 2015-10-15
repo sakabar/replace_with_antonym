@@ -36,23 +36,20 @@ def get_katuyou_type(lemma, pos):
 
     raise Exception("Error: get_katuyou_type(%s, %s)" % (lemma, pos))
 
+
+#表層の文字だけしか取っていなかったので、読みも取ってくるように変更
 def extract_antonym_from_token_line(ind, token_line):
     #パターン減らせるかもしれない。
-    antonym_pat1 = re.compile("反義:[^ \"]+[^ \"$]")
-    antonym_pat2 = re.compile("[^:;]+:[^/]+/[^ \";]+")
-    antonym_pat3 = re.compile("[^:;]+:(?P<lemma>[^/]+)/[^ \";]+")
-    antonym_pat4 = re.compile("(?P<pos>[^:;]+)-?[^:]*:[^/]+/[^ \";]+")
-
-    match_obj = antonym_pat1.search(token_line)
+    regex = re.compile('反義:([^:]+:[^/]+/[^;\"]+;?)+')
+    match_obj = regex.search(token_line)
 
     if match_obj:
-        matched_list = antonym_pat2.findall(match_obj.group().replace("反義:", ""))
-        antonym_list = []
-        for antonym in matched_list:
-            lemma = antonym_pat3.search(antonym).group("lemma")
-            pos = antonym_pat4.search(antonym).group("pos")
-            antonym_list.append((ind, pos, lemma))
-        return antonym_list
+        #例: "反義:動詞:攻める/せめる;動詞:破る/やぶる"
+        #→  "動詞:攻める/せめる;動詞:破る/やぶる"
+        #→  ["動詞:攻める/せめる", "動詞:破る/やぶる"]
+
+        antonyms = re.sub("^反義:", "", match_obj.group(0)).split(';')
+        return [(ind, antonym.split(':')[0], antonym.split(':')[1].split('/')[0], antonym.split(':')[1].split('/')[1]) for antonym in antonyms]
     else:
         return []
 

@@ -31,18 +31,17 @@ class TestMain(unittest.TestCase):
 
 
     def test_get_katuyou_type0(self):
-#         disamgibuated_juman_lines ="""
-# あの あの あの 指示詞 7 連体詞形態指示詞 2 * 0 * 0 NIL
-# 料理 りょうり 料理 名詞 6 サ変名詞 2 * 0 * 0 "代表表記:料理/りょうり カテゴリ:人工物-食べ物;抽象物 ドメイン:料理・食事"
-# を を を 助詞 9 格助詞 1 * 0 * 0 NIL
-# 嫌って きらって 嫌う 動詞 2 * 0 子音動詞ワ行 12 タ系連用テ形 14 "代表表記:嫌う/きらう 反義:動詞:好く/すく"
-# いた いた いる 接尾辞 14 動詞性接尾辞 7 母音動詞 1 タ形 10 "代表表記:いる/いる"
-# 。 。 。 特殊 1 句点 1 * 0 * 0 NIL
-# EOS
-# """[1:-1].split('\n') #初めの改行をカット
         lemma = "好く"
         pos = "動詞"
         self.assertEquals(replace_lib.get_katuyou_type(lemma, pos),"子音動詞カ行")
+
+    def test_extract_antonym_from_token_line0(self):
+        ind = 0
+        token_line = '守る まもる 守る 動詞 2 * 0 子音動詞ラ行 10 基本形 2 "代表表記:守る/まもる 反義:動詞:攻める/せめる;動詞:破る/やぶる"'
+
+        actual = replace_lib.extract_antonym_from_token_line(ind, token_line)
+        expected = [(0, "動詞", "攻める", "せめる"), (0, "動詞", "破る", "やぶる")]
+        self.assertEquals(actual, expected)
 
 
 if __name__ == '__main__':
