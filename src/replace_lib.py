@@ -3,6 +3,51 @@ import re
 import sexp
 import itertools
 
+#活用させる
+#FIXME
+def change_katuyou(token_line, katuyou):
+    juman_dir = "/Users/sak/local/src/juman-7.01"
+    # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
+
+    s_exp = sexp.get_sexp(juman_dir + "/dic/JUMAN.katuyou")
+    yomi = token_line.split(' ')[1]
+    lemma = token_line.split(' ')[2]
+    pos = token_line.split(' ')[3]
+    katuyou_type = token_line.split(' ')[7]
+    info = " ".join(token_line.split(' ')[11:]) #「"代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>」のように、スペースで区切られてしまっているのを結合する。
+
+    kihon = sexp.get_verb_katuyou(s_exp, katuyou_type, "基本形")
+
+    pat1 = re.compile("%s$" % kihon)
+    gokan = re.sub(pat1, "", lemma) #基本形の部分を取る
+    yomi_gokan = re.sub(pat1, "", yomi)
+
+    try:
+        katuyou_gobi = sexp.get_verb_katuyou(s_exp, katuyou_type, katuyou)
+        katuyou_gobi = "" if katuyou_gobi == '*' else katuyou_gobi
+        surf = gokan + katuyou_gobi
+        new_yomi = yomi_gokan + katuyou_gobi
+        return juman_like_str(surf, new_yomi, lemma, pos, info, katuyou, katuyou_type)
+
+    except:
+        #変換しない
+        return line
+
+
+
+    return '歩き あるき 歩く 動詞 2 * 0 子音動詞カ行 2 基本連用形 8 "代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>'
+
+def remove_negation_from_banning(token_lines):
+    #文末から見る
+    lst = [tmp for tmp in enumerate(token_lines)]
+    for ind, line in lst[::-1]:
+        if line == 'な な な 助詞 9 終助詞 4 * 0 * 0 NIL <文末><表現文末><かな漢字><ひらがな><付属>' and token_lines[ind-1].split(' ')[3] == '動詞' and token_lines[ind-1].split(' ')[9] == "基本形":
+
+            return ['歩き あるき 歩き 動詞 2 * 0 子音動詞カ行 2 基本連用形 8 "代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>', 'ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"']
+
+    return token_lines
+
+
 #jumanの辞書をサーチして、ヒットした行を返す
 #品詞を指定するのは、内容語と接尾辞で辞書ファイルが異なるため
 def search_lemma(pos, lemma, yomi):
@@ -38,7 +83,7 @@ def search_lemma(pos, lemma, yomi):
 #元々は、get_katuyou_type
 #見出し語と品詞を引数として、詳細な品詞を返す(例:ナノ形容詞)
 #品詞を指定するのは、内容語と接尾辞で辞書ファイルが異なるため
-#Jumanに付属する辞書で単語を検索し、活用形と意味情報を要素とするタプルを返す
+#Jumanに付属する辞書で単語を検索し、活用型と意味情報を要素とするタプルを返す
 def get_katuyou_type_and_info_from_juman_dic(pos, lemma, yomi):
 
     regex_of_katuyou_type = re.compile("\(活用型 (?P<katuyou_type>[^\)]+)\)")
@@ -92,45 +137,35 @@ def extract_antonyms_from_token_line(ind, token_line):
 def juman_like_str(surf, yomi, lemma, pos, info="NIL", katuyou="*", katuyou_type="*", detail_pos="*"):
     return "%s %s %s %s * %s * %s * %s * %s" % (surf, yomi, lemma, pos, detail_pos, katuyou_type, katuyou, info)
 
-def replace_juman_line_with_antonym(line, pos, lemma, yomi):
+def replace_juman_line_with_antonym(orig_line, pos, lemma, yomi):
     basic_pos = "".join(list(itertools.takewhile(lambda ch: ch != '-', pos))) #動くと思うけど、もっといい書き方ありそう
 
-    if line.split(' ')[7] == '*':
+    if orig_line.split(' ')[7] == '*':
         #活用がない → 反義語も活用しない
         #というのはウソで、「ウソ(名詞)」→「本当だ(形容詞)」というパターンがある
         #とりあえず、活用のことは考えず、単に置き換える
         #FIXME
         return juman_like_str(lemma, yomi, lemma, pos)
 
-    elif basic_pos != line.split(' ')[3]:
+    elif basic_pos != orig_line.split(' ')[3]:
         #同じ品詞でない場合は変換しない(本当だ[形]→ウソ[名])
         #「ウソだと思わないでください」→「本当だと思ってください」
         #を変換しないということなので、ぐぬぬ…良くないぞ。
         #FIXME
-        return line
+        return orig_line
 
     else:
         #活用がある
-        juman_dir = "/Users/sak/local/src/juman-7.01"
-        # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
-        s_exp = sexp.get_sexp(juman_dir + "/dic/JUMAN.katuyou")
-        katuyou = line.split(' ')[9]
-        katuyou_type, info = get_katuyou_type_and_info_from_juman_dic(pos, lemma, yomi)
-        kihon = sexp.get_verb_katuyou(s_exp, katuyou_type, "基本形")
+        katuyou = orig_line.split(' ')[9]
+        katuyou_type_of_ant, info_of_ant = get_katuyou_type_and_info_from_juman_dic(pos, lemma, yomi)
+        antonym_juman_like_str = juman_like_str(lemma, yomi, lemma, pos, info_of_ant, "基本形", katuyou_type_of_ant)
+        return change_katuyou(antonym_juman_like_str, katuyou)
 
-        pat1 = re.compile("%s$" % kihon)
-        gokan = re.sub(pat1, "", lemma) #基本形の部分を取る
-        yomi_gokan = re.sub(pat1, "", yomi)
 
-        try:
-            katuyou_gobi = sexp.get_verb_katuyou(s_exp, katuyou_type, katuyou)
-            katuyou_gobi = "" if katuyou_gobi == '*' else katuyou_gobi
-            surf = gokan + katuyou_gobi
-            new_yomi = yomi_gokan + katuyou_gobi
-            return juman_like_str(surf, new_yomi, lemma, pos, info, katuyou, katuyou_type)
-        except:
-            #変換しない
-            return line
+
+
+
+
 
 #antonym_pairsとは: 例 [(0, 動詞, 攻める, せめる), (1, 形容詞, 大きい, おおきい), (3, 接尾辞-形容詞性述語接尾辞, やすい, やすい)]
 #antonym_pairsに従って置き換えた後の文字列に対応する、jumanの行っぽいものを返す。

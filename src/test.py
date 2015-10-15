@@ -96,6 +96,24 @@ class TestMain(unittest.TestCase):
         expected = ['守って まもって 守る 動詞 * * * 子音動詞ラ行 * タ系連用テ形 * "代表表記:守る/まもる 反義:動詞:攻める/せめる;動詞:破る/やぶる"', 'は は は 助詞 9 副助詞 2 * 0 * 0 NIL <文末><表現文末><かな漢字><ひらがな><付属>']
         self.assertEquals(actual, expected)
 
+    def test_remove_negation_from_banning(self):
+        token_lines = ['歩く あるく 歩く 動詞 2 * 0 子音動詞カ行 2 基本形 2 "代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>', 'な な な 助詞 9 終助詞 4 * 0 * 0 NIL <文末><表現文末><かな漢字><ひらがな><付属>']
+
+        actual = replace_lib.remove_negation_from_banning(token_lines)
+        expected = ['歩き あるき 歩き 動詞 2 * 0 子音動詞カ行 2 基本連用形 8 "代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>', 'ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"']
+        self.assertEquals(actual, expected)
+
+    def test_change_katuyou0(self):
+        token_line = '歩く あるく 歩く 動詞 2 * 0 子音動詞カ行 2 基本形 2 "代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>'
+        katuyou = '基本連用形'
+        actual = replace_lib.change_katuyou(token_line, katuyou)
+        expected = '歩き あるき 歩く 動詞 * * * 子音動詞カ行 * 基本連用形 * "代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>'
+        self.assertEquals([actual], [expected])
+        # self.assertEquals(actual, expected)
+
+
+
+
 if __name__ == '__main__':
     unittest.main() # シンプルな出力でいい場合
 
