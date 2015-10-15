@@ -110,12 +110,12 @@ def sentence_func(knp_lines):
     for arg_chunk_ind, arg_chunk in arg_chunks:
         try:
             head_token_of_arg = get_head_token_of_chunk(knp_lines, arg_chunk_ind)
-
-            if get_pos_of_token(head_token_of_arg) == "名詞" or get_pos_of_token(head_token_of_arg) == "形容詞":
-                #まず、argの主辞の名詞(or 形容詞)に反義語が存在するかどうか?
+            if get_pos_of_token(head_token_of_arg) == "名詞" or ("<修飾>" in arg_chunk):
+                #まず、argの主辞の名詞に反義語が存在するかどうか?
                 if "反義" in head_token_of_arg:
                     token_ind = get_token_ind(knp_lines, arg_chunk_ind, head_token_of_arg)
                     ans.extend(replace_token_with_antonym(tokens, token_ind, head_token_of_arg))
+
         except:
             pass #FIXME ひどくない?
 
