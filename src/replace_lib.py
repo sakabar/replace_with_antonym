@@ -4,7 +4,6 @@ import sexp
 import itertools
 
 #活用させる
-#FIXME
 def change_katuyou(token_line, katuyou):
     juman_dir = "/Users/sak/local/src/juman-7.01"
     # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
@@ -13,14 +12,17 @@ def change_katuyou(token_line, katuyou):
     yomi = token_line.split(' ')[1]
     lemma = token_line.split(' ')[2]
     pos = token_line.split(' ')[3]
+    orig_katuyou = token_line.split(' ')[9]
     katuyou_type = token_line.split(' ')[7]
     info = " ".join(token_line.split(' ')[11:]) #「"代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>」のように、スペースで区切られてしまっているのを結合する。
 
-    kihon = sexp.get_verb_katuyou(s_exp, katuyou_type, "基本形")
+    kihon_katuyou_gobi = sexp.get_verb_katuyou(s_exp, katuyou_type, "基本形")
+    orig_katuyou_gobi = sexp.get_verb_katuyou(s_exp, katuyou_type, orig_katuyou)
 
-    pat1 = re.compile("%s$" % kihon)
+    pat1 = re.compile("%s$" % kihon_katuyou_gobi)
+    pat2 = re.compile("%s$" % orig_katuyou_gobi)
     gokan = re.sub(pat1, "", lemma) #基本形の部分を取る
-    yomi_gokan = re.sub(pat1, "", yomi)
+    yomi_gokan = re.sub(pat2, "", yomi)
 
     try:
         katuyou_gobi = sexp.get_verb_katuyou(s_exp, katuyou_type, katuyou)
@@ -33,20 +35,70 @@ def change_katuyou(token_line, katuyou):
         #変換しない
         return line
 
+#例: 「走るな」→「走りましょう」
+def remove_negation_from_suruna(token_lines):
+    ans_lines = [s for s in token_lines]
 
-
-    return '歩き あるき 歩く 動詞 2 * 0 子音動詞カ行 2 基本連用形 8 "代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>'
-
-def remove_negation_from_banning(token_lines):
     #文末から見る
     lst = [tmp for tmp in enumerate(token_lines)]
     for ind, line in lst[::-1]:
-        if line == 'な な な 助詞 9 終助詞 4 * 0 * 0 NIL <文末><表現文末><かな漢字><ひらがな><付属>' and token_lines[ind-1].split(' ')[3] == '動詞' and token_lines[ind-1].split(' ')[9] == "基本形":
+        if ind > 0 and line == 'な な な 助詞 9 終助詞 4 * 0 * 0 NIL <文末><表現文末><かな漢字><ひらがな><付属>' and ans_lines[ind-1].split(' ')[3] == '動詞' and ans_lines[ind-1].split(' ')[9] == "基本形":
+            ans_lines[ind-1] = change_katuyou(ans_lines[ind-1], "基本連用形")
+            ans_lines[ind] = 'ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"'
+            break
+    return ans_lines
 
-            return ['歩き あるき 歩き 動詞 2 * 0 子音動詞カ行 2 基本連用形 8 "代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>', 'ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"']
+#例:「走ってはいけません」→「走りましょう」
+def remove_negation_from_ikemasen(token_lines):
+    ans_lines = [s for s in token_lines]
 
-    return token_lines
+    #文末から見る
+    lst = [tmp for tmp in enumerate(token_lines)]
+    for ind, line in lst[::-1]:
+        if ind-4 >= 0 and ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-4].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-3].split(' ')[0] == 'は' and (ans_lines[ind-2].split(' ')[0] == 'いけ' or ans_lines[ind-2].split(' ')[0] == 'なり') and ans_lines[ind-1].split(' ')[0] == 'ませ' and ans_lines[ind].split(' ')[0] == 'ん':
+            ans_lines_before= [] if ind-4 == 0 else ans_lines[0:ind-4]
+            ans_lines_after =  ans_lines[ind+1:]
+            verb = change_katuyou(ans_lines[ind-4], "基本連用形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.append('ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"')
+            ans.extend(ans_lines_after)
+            return ans
 
+    return ans_lines
+
+
+def remove_negation_from_naide_kudasai(token_lines):
+    ans_lines = [s for s in token_lines]
+
+    #文末から見る
+    lst = [tmp for tmp in enumerate(token_lines)]
+    for ind, line in lst[::-1]:
+        if ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == '未然形' and ans_lines[ind-1].split(' ')[0] == 'ないで' and ans_lines[ind].split(' ')[0] == 'ください':
+            ans_lines_before= [] if ind-2 == 0 else ans_lines[0:ind-2]
+            ans_lines_after =  ans_lines[ind+1:]
+            verb = change_katuyou(ans_lines[ind-2], "基本連用形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.append('ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"')
+            ans.extend(ans_lines_after)
+            return ans
+
+    return ans_lines
+
+
+
+def remove_negation_from_banning(token_lines):
+    orig_str = "".join(line.split(' ')[0] for line in token_lines)
+
+    if ("はいけません" in orig_str) or ("はなりません" in orig_str):
+        return remove_negation_from_ikemasen(token_lines)
+    elif ("ないでください" in orig_str):
+        return remove_negation_from_naide_kudasai(token_lines)
+    elif ("な" in orig_str):
+        return remove_negation_from_suruna(token_lines)
+    else:
+        return token_lines
 
 #jumanの辞書をサーチして、ヒットした行を返す
 #品詞を指定するのは、内容語と接尾辞で辞書ファイルが異なるため
