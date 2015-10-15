@@ -17,7 +17,10 @@ def change_katuyou(token_line, katuyou):
     info = " ".join(token_line.split(' ')[11:]) #「"代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>」のように、スペースで区切られてしまっているのを結合する。
 
     kihon_katuyou_gobi = sexp.get_verb_katuyou(s_exp, katuyou_type, "基本形")
+    kihon_katuyou_gobi = "" if kihon_katuyou_gobi == '*' else kihon_katuyou_gobi
+
     orig_katuyou_gobi = sexp.get_verb_katuyou(s_exp, katuyou_type, orig_katuyou)
+    orig_katuyou_gobi = "" if orig_katuyou_gobi == "*" else orig_katuyou_gobi
 
     pat1 = re.compile("%s$" % kihon_katuyou_gobi)
     pat2 = re.compile("%s$" % orig_katuyou_gobi)

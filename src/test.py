@@ -145,6 +145,16 @@ class TestMain(unittest.TestCase):
         self.assertEquals([actual], [expected])
 
 
+    def test_change_katuyou2(self):
+        token_line = '覚え おぼえ 覚える 動詞 * * * 母音動詞 * 未然形 * "代表表記:覚える/おぼえる 反義:動詞:忘れる/わすれる"'
+        katuyou = '基本連用形'
+        actual = replace_lib.change_katuyou(token_line, katuyou)
+        expected = '覚え おぼえ 覚える 動詞 * * * 母音動詞 * 基本連用形 * "代表表記:覚える/おぼえる 反義:動詞:忘れる/わすれる"'
+        self.assertEquals([actual], [expected])
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main() # シンプルな出力でいい場合
