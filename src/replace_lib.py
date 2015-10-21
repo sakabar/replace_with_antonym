@@ -131,8 +131,6 @@ def remove_negation_from_go_naranaide(token_lines):
             ans.extend(ans_lines_after)
             return ans
 
-
-    raise Exception('dc')
     return ans_lines
 
 def remove_negation_from_banning(token_lines):
