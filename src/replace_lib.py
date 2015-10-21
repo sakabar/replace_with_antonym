@@ -36,9 +36,6 @@ def change_katuyou(token_line, katuyou):
 
     except:
         #変換しない
-        type(sexp.get_verb_katuyou(s_exp, katuyou_type, katuyou))
-        print "AIIIIIIIIIIIIIII\n%s\nAIIIIIIIIIIIIII" % token_line
-
         return token_line
 
 #例: 「走るな」→「走りましょう」
@@ -93,14 +90,13 @@ def remove_negation_from_naide_kudasai(token_lines):
     #文末から見る
     lst = [tmp for tmp in enumerate(token_lines)]
     for ind, line in lst[::-1]:
-        cond = ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == '未然形' and ans_lines[ind-1].split(' ')[0] == 'ないで' and (ans_lines[ind].split(' ')[1] == 'ください' or ans_lines[ind].split(' ')[0] == 'ね' or ans_lines[ind].split(' ')[0] == 'よ')
+        cond = ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == '未然形' and ans_lines[ind-1].split(' ')[0] == 'ないで' and (ans_lines[ind].split(' ')[1] == 'ください' or ans_lines[ind].split(' ')[0] == 'ね' or ans_lines[ind].split(' ')[0] == 'よ' or ans_lines[ind].split(' ')[0] == 'くれ')
         if cond:
             ans_lines_before= [] if ind-2 == 0 else ans_lines[0:ind-2]
-            ans_lines_after =  ans_lines[ind+1:]
-            verb = change_katuyou(ans_lines[ind-2], "基本連用形")
+            ans_lines_after =  ans_lines[ind:]
+            verb = change_katuyou(ans_lines[ind-2], "タ系連用テ形")
             ans = ans_lines_before
             ans.append(verb)
-            ans.append('ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"')
             ans.extend(ans_lines_after)
             return ans
 
