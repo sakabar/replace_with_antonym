@@ -36,7 +36,7 @@ def change_katuyou(token_line, katuyou):
 
     except:
         #変換しない
-        return line
+        return token_line
 
 #例: 「走るな」→「走りましょう」
 def remove_negation_from_suruna(token_lines):

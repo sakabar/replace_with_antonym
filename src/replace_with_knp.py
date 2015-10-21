@@ -47,6 +47,8 @@ def replace_token_with_antonym(token_lines, ind, head_token_line):
     return [replace_lib.replace_with_antonym_pairs(token_lines, [antonym_pair]) for antonym_pair in antonym_lst]
 
 
+#あるチャンクの主辞のトークンを返す
+#なかったら空文字列を返す
 def get_head_token_of_chunk(knp_lines, chunk_ind):
     chunk_line = knp_lines[chunk_ind]
 
@@ -62,12 +64,13 @@ def get_head_token_of_chunk(knp_lines, chunk_ind):
         #FIXME よくない場合がありそう。
         #あと、?でつながっている場合は?
     except:
-        raise Exception('in get_normalized_cand_form()')
+        return ""
 
     if ("+" in normalized_cand_form):
         normalized_cand_form = normalized_cand_form.split('+')[0]
 
-    return [knp_lines[i] for i in xrange(chunk_ind, len(knp_lines)) if is_token(knp_lines[i]) and normalized_cand_form in knp_lines[i]][0]
+    ans = [knp_lines[i] for i in xrange(chunk_ind, len(knp_lines)) if is_token(knp_lines[i]) and normalized_cand_form in knp_lines[i]]
+    return "" if len(ans) == 0 else ans[0]
 
 
 
@@ -105,29 +108,28 @@ def sentence_func(knp_lines):
 
     arg_chunks = [(ind, line) for ind, line in enumerate(knp_lines) if is_chunk(line) and line.split(' ')[2] == (str(last_chunk_num) + "D") and re.search("<係:[^>]+>", line)]
     for arg_chunk_ind, arg_chunk in arg_chunks:
-        try:
-            head_token_of_arg = get_head_token_of_chunk(knp_lines, arg_chunk_ind)
+        head_token_of_arg = get_head_token_of_chunk(knp_lines, arg_chunk_ind)
+        if head_token_of_arg == "":
+            pass
+        else:
             if get_pos_of_token(head_token_of_arg) == "名詞" or ("<修飾>" in arg_chunk):
                 #まず、argの主辞の名詞に反義語が存在するかどうか?
                 if "反義" in head_token_of_arg:
                     token_ind = get_token_ind(knp_lines, arg_chunk_ind, head_token_of_arg)
                     ans.extend(replace_token_with_antonym(tokens, token_ind, head_token_of_arg))
 
-        except:
-            pass #FIXME ひどくない?
-
         #次に、そのチャンクにかかっている動詞or名詞or形容詞に反義語が存在するか?
         #FIXME これだと、「分かりにくい表現を使わないでください」が変換できない
         chunk_num = get_chunk_num(arg_chunk)
         for mod_chunk_ind, mod_chunk in [(ind, line) for ind, line in enumerate(knp_lines) if is_chunk(line) and line.split(' ')[2] == (str(chunk_num) + "D")]:
-            try:
-                mod_chunk_token = get_head_token_of_chunk(knp_lines, mod_chunk_ind)
+            mod_chunk_token = get_head_token_of_chunk(knp_lines, mod_chunk_ind)
+            if mod_chunk_token == "":
+                pass
+            else:
                 if get_pos_of_token(mod_chunk_token) == "名詞" or get_pos_of_token(mod_chunk_token) == "形容詞" or get_pos_of_token(mod_chunk_token) == "動詞":
                     if "反義" in mod_chunk_token:
                         tok_ind = get_token_ind(knp_lines, mod_chunk_ind, mod_chunk_token)
                         ans.extend(replace_token_with_antonym(tokens, tok_ind, mod_chunk_token))
-            except:
-                pass #FIXME ひどくない?
 
     ans = ["".join([token_line.split(' ')[0] for token_line in replace_lib.remove_negation_from_banning(token_lines)]) for token_lines in ans]
     ans = [s for s in ans if s != orig_str] #元の文は除く
