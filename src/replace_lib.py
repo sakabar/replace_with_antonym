@@ -51,7 +51,8 @@ def remove_negation_from_suruna(token_lines):
             break
     return ans_lines
 
-#例:「走ってはいけません」→「走りましょう」
+#例:「走ってはいけません」→「走らなければいけません」
+#「なければ」という否定は入っているが、禁止ではない。
 def remove_negation_from_ikemasen(token_lines):
     ans_lines = [s for s in token_lines]
 
@@ -61,25 +62,41 @@ def remove_negation_from_ikemasen(token_lines):
         cond_ikemasen = (ind-4 >= 0 and ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-4].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-3].split(' ')[0] == 'は' and (ans_lines[ind-2].split(' ')[0] == 'いけ' or ans_lines[ind-2].split(' ')[0] == 'なり') and ans_lines[ind-1].split(' ')[0] == 'ませ' and ans_lines[ind].split(' ')[0] == 'ん')
         cond_naranai = ind-3 >= 0 and ans_lines[ind-3].split(' ')[3] == '動詞' and ans_lines[ind-3].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-2].split(' ')[0] == 'は' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ない'
         cond_ikenai = ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-1].split(' ')[0] == 'は' and ans_lines[ind].split(' ')[0] == 'いけない'
-        if cond_ikemasen or cond_naranai or cond_ikenai:
-            new_ind = -1
-            if cond_ikemasen:
-                new_ind = ind-4
-            elif cond_naranai:
-                new_ind = ind-3
-            elif cond_ikenai:
-                new_ind = ind-2
-            else:
-                raise Exception('Error')
-
+        if cond_ikemasen:
+            new_ind = ind - 4
             ans_lines_before= [] if new_ind == 0 else ans_lines[0:new_ind]
-            ans_lines_after =  ans_lines[ind+1:]
-            verb = change_katuyou(ans_lines[new_ind], "基本連用形")
+            ans_lines_after =  ans_lines[ind-2:]
+            verb = change_katuyou(ans_lines[new_ind], "未然形")
             ans = ans_lines_before
             ans.append(verb)
-            ans.append('ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"')
+            ans.append('なければ なければ ない 接尾辞 14 形容詞性述語接尾辞 5 イ形容詞アウオ段 18 基本条件形 6 "代表表記:ない/ない"')
             ans.extend(ans_lines_after)
             return ans
+
+        elif cond_naranai:
+            new_ind = ind - 3
+            ans_lines_before= [] if new_ind == 0 else ans_lines[0:new_ind]
+            ans_lines_after =  ans_lines[ind-1:]
+            verb = change_katuyou(ans_lines[new_ind], "未然形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.append('なければ なければ ない 接尾辞 14 形容詞性述語接尾辞 5 イ形容詞アウオ段 18 基本条件形 6 "代表表記:ない/ない"')
+            ans.extend(ans_lines_after)
+            return ans
+
+        elif cond_ikenai:
+            new_ind = ind - 2
+            ans_lines_before= [] if new_ind == 0 else ans_lines[0:new_ind]
+            ans_lines_after =  ans_lines[ind:]
+            verb = change_katuyou(ans_lines[new_ind], "未然形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.append('なければ なければ ない 接尾辞 14 形容詞性述語接尾辞 5 イ形容詞アウオ段 18 基本条件形 6 "代表表記:ない/ない"')
+            ans.extend(ans_lines_after)
+            return ans
+
+
+
 
     return ans_lines
 
@@ -135,11 +152,11 @@ def remove_negation_from_go_naranaide(token_lines):
 def remove_negation_from_banning(token_lines):
     orig_str = "".join(line.split(' ')[0] for line in token_lines)
 
-    if ("はいけません" in orig_str) or ("はなりません" in orig_str):
+    if ("はいけません" in orig_str) or ("はなりません" in orig_str) or ("てはならな" in orig_str) or ("てはいけな" in orig_str):
         return remove_negation_from_ikemasen(token_lines)
-    elif ("にならないで" in orig_str) or ("にはならないで"in orig_str):
+    elif (("にならな" in orig_str) or ("にはならな" in orig_str)) and (("お" in orig_str) or "ご" in orig_str):
         return remove_negation_from_go_naranaide(token_lines)
-    elif ("ないで" in orig_str):
+    elif ("ないでよ" in orig_str) or ("ないでく" in orig_str) or ("ないで下" in orig_str) or ("ないでね" in orig_str) or ("ないでよ" in orig_str):
         return remove_negation_from_naide_kudasai(token_lines)
     elif ("な" in orig_str):
         return remove_negation_from_suruna(token_lines)
