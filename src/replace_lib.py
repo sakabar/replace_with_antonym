@@ -36,6 +36,9 @@ def change_katuyou(token_line, katuyou):
 
     except:
         #変換しない
+        type(sexp.get_verb_katuyou(s_exp, katuyou_type, katuyou))
+        print "AIIIIIIIIIIIIIII\n%s\nAIIIIIIIIIIIIII" % token_line
+
         return token_line
 
 #例: 「走るな」→「走りましょう」
@@ -257,13 +260,8 @@ def replace_juman_line_with_antonym(orig_line, pos, lemma, yomi):
         #活用がある
         katuyou = orig_line.split(' ')[9]
         katuyou_type_of_ant, info_of_ant = get_katuyou_type_and_info_from_juman_dic(pos, lemma, yomi)
-        antonym_juman_like_str = juman_like_str(lemma, yomi, lemma, pos, info_of_ant, "基本形", katuyou_type_of_ant)
+        antonym_juman_like_str = juman_like_str(lemma, yomi, lemma, pos, info_of_ant, '基本形', katuyou_type_of_ant)
         return change_katuyou(antonym_juman_like_str, katuyou)
-
-
-
-
-
 
 
 #antonym_pairsとは: 例 [(0, 動詞, 攻める, せめる), (1, 形容詞, 大きい, おおきい), (3, 接尾辞-形容詞性述語接尾辞, やすい, やすい)]
@@ -271,7 +269,6 @@ def replace_juman_line_with_antonym(orig_line, pos, lemma, yomi):
 def replace_with_antonym_pairs(token_lines, antonym_pairs):
     ans_lines = [line for line in token_lines]
 
-    #FIXME
     #antonym_pairsの中に、同じ単語を複数の反義語に置き換えるようなペアが入っていないかどうかチェック
     #例: [守る→破る, 守る→攻める]
     ind_lst = [ind for ind, pos, lemma, yomi in antonym_pairs]
