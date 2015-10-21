@@ -58,10 +58,23 @@ def remove_negation_from_ikemasen(token_lines):
     #文末から見る
     lst = [tmp for tmp in enumerate(token_lines)]
     for ind, line in lst[::-1]:
-        if ind-4 >= 0 and ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-4].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-3].split(' ')[0] == 'は' and (ans_lines[ind-2].split(' ')[0] == 'いけ' or ans_lines[ind-2].split(' ')[0] == 'なり') and ans_lines[ind-1].split(' ')[0] == 'ませ' and ans_lines[ind].split(' ')[0] == 'ん':
-            ans_lines_before= [] if ind-4 == 0 else ans_lines[0:ind-4]
+        cond_ikemasen = (ind-4 >= 0 and ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-4].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-3].split(' ')[0] == 'は' and (ans_lines[ind-2].split(' ')[0] == 'いけ' or ans_lines[ind-2].split(' ')[0] == 'なり') and ans_lines[ind-1].split(' ')[0] == 'ませ' and ans_lines[ind].split(' ')[0] == 'ん')
+        cond_naranai = ind-3 >= 0 and ans_lines[ind-3].split(' ')[3] == '動詞' and ans_lines[ind-3].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-2].split(' ')[0] == 'は' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ない'
+        cond_ikenai = ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-1].split(' ')[0] == 'は' and ans_lines[ind].split(' ')[0] == 'いけない'
+        if cond_ikemasen or cond_naranai or cond_ikenai:
+            new_ind = -1
+            if cond_ikemasen:
+                new_ind = ind-4
+            elif cond_naranai:
+                new_ind = ind-3
+            elif cond_ikenai:
+                new_ind = ind-2
+            else:
+                raise Exception('Error')
+
+            ans_lines_before= [] if new_ind == 0 else ans_lines[0:new_ind]
             ans_lines_after =  ans_lines[ind+1:]
-            verb = change_katuyou(ans_lines[ind-4], "基本連用形")
+            verb = change_katuyou(ans_lines[new_ind], "基本連用形")
             ans = ans_lines_before
             ans.append(verb)
             ans.append('ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"')
@@ -77,7 +90,8 @@ def remove_negation_from_naide_kudasai(token_lines):
     #文末から見る
     lst = [tmp for tmp in enumerate(token_lines)]
     for ind, line in lst[::-1]:
-        if ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == '未然形' and ans_lines[ind-1].split(' ')[0] == 'ないで' and ans_lines[ind].split(' ')[1] == 'ください':
+        cond = ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == '未然形' and ans_lines[ind-1].split(' ')[0] == 'ないで' and (ans_lines[ind].split(' ')[1] == 'ください' or ans_lines[ind].split(' ')[0] == 'ね' or ans_lines[ind].split(' ')[0] == 'よ')
+        if cond:
             ans_lines_before= [] if ind-2 == 0 else ans_lines[0:ind-2]
             ans_lines_after =  ans_lines[ind+1:]
             verb = change_katuyou(ans_lines[ind-2], "基本連用形")
@@ -89,14 +103,46 @@ def remove_negation_from_naide_kudasai(token_lines):
 
     return ans_lines
 
+def remove_negation_from_go_naranaide(token_lines):
+    ans_lines = [s for s in token_lines]
 
+    #文末から見る
+    lst = [tmp for tmp in enumerate(token_lines)]
+    for ind, line in lst[::-1]:
+        cond_ni = ind-4 >= 0 and (ans_lines[ind-4].split(' ')[0] == 'お' or ans_lines[ind-4].split(' ')[0] == 'ご') and ans_lines[ind-3].split(' ')[3] == '動詞' and ans_lines[ind-3].split(' ')[9] == '基本連用形' and ans_lines[ind-2].split(' ')[0] == 'に' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ないで'
+
+        cond_niha = ind-5 >= 0 and (ans_lines[ind-5].split(' ')[0] == 'お' or ans_lines[ind-5].split(' ')[0] == 'ご') and ((ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-4].split(' ')[9] == '基本連用形') or (ans_lines[ind-4].split(' ')[3] == '名詞')) and ans_lines[ind-3].split(' ')[0] == 'に' and ans_lines[ind-2].split(' ')[0] == 'は' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ないで'
+
+        if cond_ni:
+            ans_lines_before= ans_lines[0:ind-1]
+            ans_lines_after = ans_lines[ind+1:]
+            verb = change_katuyou(ans_lines[ind-1], "タ系連用テ形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.extend(ans_lines_after)
+            return ans
+
+        elif cond_niha:
+            ans_lines_before= ans_lines[0:ind-2]
+            ans_lines_after = ans_lines[ind+1:]
+            verb = change_katuyou(ans_lines[ind-1], "タ系連用テ形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.extend(ans_lines_after)
+            return ans
+
+
+    raise Exception('dc')
+    return ans_lines
 
 def remove_negation_from_banning(token_lines):
     orig_str = "".join(line.split(' ')[0] for line in token_lines)
 
     if ("はいけません" in orig_str) or ("はなりません" in orig_str):
         return remove_negation_from_ikemasen(token_lines)
-    elif ("ないでください" in orig_str) or ("ないで下さい" in orig_str):
+    elif ("にならないで" in orig_str) or ("にはならないで"in orig_str):
+        return remove_negation_from_go_naranaide(token_lines)
+    elif ("ないで" in orig_str):
         return remove_negation_from_naide_kudasai(token_lines)
     elif ("な" in orig_str):
         return remove_negation_from_suruna(token_lines)
