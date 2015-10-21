@@ -60,12 +60,15 @@ def remove_negation_from_ikemasen(token_lines):
     for ind, line in lst[::-1]:
         cond_ikemasen = (ind-4 >= 0 and ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-4].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-3].split(' ')[0] == 'は' and (ans_lines[ind-2].split(' ')[0] == 'いけ' or ans_lines[ind-2].split(' ')[0] == 'なり') and ans_lines[ind-1].split(' ')[0] == 'ませ' and ans_lines[ind].split(' ')[0] == 'ん')
         cond_naranai = ind-3 >= 0 and ans_lines[ind-3].split(' ')[3] == '動詞' and ans_lines[ind-3].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-2].split(' ')[0] == 'は' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ない'
-        if cond_ikemasen or cond_naranai:
+        cond_ikenai = ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-1].split(' ')[0] == 'は' and ans_lines[ind].split(' ')[0] == 'いけない'
+        if cond_ikemasen or cond_naranai or cond_ikenai:
             new_ind = -1
             if cond_ikemasen:
                 new_ind = ind-4
             elif cond_naranai:
                 new_ind = ind-3
+            elif cond_ikenai:
+                new_ind = ind-2
             else:
                 raise Exception('Error')
 
