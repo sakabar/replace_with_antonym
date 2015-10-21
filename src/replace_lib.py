@@ -103,14 +103,46 @@ def remove_negation_from_naide_kudasai(token_lines):
 
     return ans_lines
 
+def remove_negation_from_go_naranaide(token_lines):
+    ans_lines = [s for s in token_lines]
 
+    #文末から見る
+    lst = [tmp for tmp in enumerate(token_lines)]
+    for ind, line in lst[::-1]:
+        cond_ni = ind-4 >= 0 and (ans_lines[ind-4].split(' ')[0] == 'お' or ans_lines[ind-4].split(' ')[0] == 'ご') and ans_lines[ind-3].split(' ')[3] == '動詞' and ans_lines[ind-3].split(' ')[9] == '基本連用形' and ans_lines[ind-2].split(' ')[0] == 'に' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ないで'
+
+        cond_niha = ind-5 >= 0 and (ans_lines[ind-5].split(' ')[0] == 'お' or ans_lines[ind-5].split(' ')[0] == 'ご') and ((ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-4].split(' ')[9] == '基本連用形') or (ans_lines[ind-4].split(' ')[3] == '名詞')) and ans_lines[ind-3].split(' ')[0] == 'に' and ans_lines[ind-2].split(' ')[0] == 'は' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ないで'
+
+        if cond_ni:
+            ans_lines_before= ans_lines[0:ind-1]
+            ans_lines_after = ans_lines[ind+1:]
+            verb = change_katuyou(ans_lines[ind-1], "タ系連用テ形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.extend(ans_lines_after)
+            return ans
+
+        elif cond_niha:
+            ans_lines_before= ans_lines[0:ind-2]
+            ans_lines_after = ans_lines[ind+1:]
+            verb = change_katuyou(ans_lines[ind-1], "タ系連用テ形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.extend(ans_lines_after)
+            return ans
+
+
+    raise Exception('dc')
+    return ans_lines
 
 def remove_negation_from_banning(token_lines):
     orig_str = "".join(line.split(' ')[0] for line in token_lines)
 
     if ("はいけません" in orig_str) or ("はなりません" in orig_str):
         return remove_negation_from_ikemasen(token_lines)
-    elif ("ないでください" in orig_str) or ("ないで下さい" in orig_str):
+    elif ("にならないで" in orig_str) or ("にはならないで"in orig_str):
+        return remove_negation_from_go_naranaide(token_lines)
+    elif ("ないで" in orig_str):
         return remove_negation_from_naide_kudasai(token_lines)
     elif ("な" in orig_str):
         return remove_negation_from_suruna(token_lines)
