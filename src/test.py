@@ -70,6 +70,15 @@ class TestMain(unittest.TestCase):
         expected = '下手に へたに 下手だ 形容詞 * * * ナ形容詞 * 基本連用形 * "代表表記:下手だ/へただ 反義:形容詞:上手い/うまい;形容詞:上手だ/うわてだ;形容詞:上手だ/じょうずだ"'
         self.assertEquals(actual, expected)
 
+    def test_replace_juman_line_with_antonym3(self):
+        line = 'カンタンに カンタンに カンタンだ 形容詞 3 * 0 ナ形容詞 21 ダ列基本連用形 7 "代表表記:簡単だ/かんたんだ 反義:形容詞:複雑だ/ふくざつだ 自動獲得:テキスト 既知語帰着:表記・出現類似" <代表表記:簡単だ/かんたんだ><反義:形容詞:複雑だ/ふくざつだ><自動獲得:テキスト><既知語帰着:表記・出現類似><正規化代表表記:簡単だ/かんたんだ><文頭><活用語><自立><内容語><タグ単位始><文節始><文節主辞><係:連用>'
+        pos = "形容詞"
+        lemma = "複雑だ"
+        yomi = "ふくざつだ"
+
+        actual = replace_lib.replace_juman_line_with_antonym(line, pos, lemma, yomi)
+        expected = '複雑に ふくざつに 複雑だ 形容詞 * * * ナ形容詞 * ダ列基本連用形 * "代表表記:複雑だ/ふくざつだ 反義:形容詞:簡単だ/かんたんだ;形容詞:単純だ/たんじゅんだ"'
+        self.assertEquals([actual], [expected])
 
 
     def test_replace_with_antonym_pairs0(self):
