@@ -2,6 +2,7 @@
 import re
 import sexp
 import itertools
+import sys
 
 #活用させる
 def change_katuyou(token_line, katuyou):
@@ -259,8 +260,10 @@ def replace_juman_line_with_antonym(orig_line, pos, lemma, yomi):
         #活用がない → 反義語も活用しない
         #というのはウソで、「ウソ(名詞)」→「本当だ(形容詞)」というパターンがある
         #とりあえず、活用のことは考えず、単に置き換える
+        #腕は伸ばし(名詞)→腕は縮める(原形)となってしまう…
         #FIXME
-        return juman_like_str(lemma, yomi, lemma, pos)
+        # return juman_like_str(lemma, yomi, lemma, pos)
+        return orig_line
 
     elif basic_pos != orig_line.split(' ')[3]:
         #同じ品詞でない場合は変換しない(本当だ[形]→ウソ[名])
