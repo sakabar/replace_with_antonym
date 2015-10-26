@@ -15,8 +15,8 @@ def get_verb_katuyou(sexp, katuyou_type, verb_form):
         if verb_type == Symbol(katuyou_type):
             for sexp2 in verb_form_sexp:
                 cond = False
-                if (katuyou_type == "ナ形容詞" or katuyou_type == "ナノ形容詞" or katuyou_type == "ナ形容詞特殊") and (verb_form != "基本形") and (verb_form != "語幹"):
-                    cond = sexp2[0] == Symbol("ダ列" + verb_form)
+                if (katuyou_type == "ナ形容詞" or katuyou_type == "ナノ形容詞" or katuyou_type == "ナ形容詞特殊") and (verb_form != "基本形") and (verb_form != "語幹") and not ("ダ列" in verb_form):
+                        cond = sexp2[0] == Symbol("ダ列" + verb_form)
                 else:
                     cond = sexp2[0] == Symbol(verb_form)
 
