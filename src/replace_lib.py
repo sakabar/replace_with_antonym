@@ -150,11 +150,34 @@ def remove_negation_from_go_naranaide(token_lines):
 
     return ans_lines
 
+def remove_negation_from_naiyouni(token_lines):
+    ans_lines = [s for s in token_lines]
+
+    #文末から見る
+    lst = [tmp for tmp in enumerate(token_lines)]
+    for ind, line in lst[::-1]:
+        cond = ind-4 >= 0 and ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-3].split(' ')[0] == 'ない' and ans_lines[ind-2].split(' ')[0] == 'ように' and ans_lines[ind-1].split(' ')[0] == 'して' and ans_lines[ind].split(' ')[1] == 'ください'
+
+        if cond:
+            ans_lines_before= [] if ind-4 == 0 else ans_lines[0:ind-4]
+            ans_lines_after =  ans_lines[ind-2:]
+            verb = change_katuyou(ans_lines[ind-4], "基本形")
+            ans = ans_lines_before
+            ans.append(verb)
+            ans.extend(ans_lines_after)
+            return ans
+
+    return ans_lines
+
+    return ["hage"]
+
 def remove_negation_from_banning(token_lines):
     orig_str = "".join(line.split(' ')[0] for line in token_lines)
 
     if ("はいけません" in orig_str) or ("はなりません" in orig_str) or ("てはならな" in orig_str) or ("てはいけな" in orig_str):
         return remove_negation_from_ikemasen(token_lines)
+    elif ("ないようにしてください" in orig_str):
+        return remove_negation_from_naiyouni(token_lines)
     elif (("にならな" in orig_str) or ("にはならな" in orig_str)) and (("お" in orig_str) or "ご" in orig_str):
         return remove_negation_from_go_naranaide(token_lines)
     elif ("ないでよ" in orig_str) or ("ないでく" in orig_str) or ("ないで下" in orig_str) or ("ないでね" in orig_str) or ("ないでよ" in orig_str):
