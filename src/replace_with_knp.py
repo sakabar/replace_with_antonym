@@ -81,6 +81,17 @@ def get_pos_of_token(knp_line):
     return knp_line.split(' ')[3]
 
 
+def remove_unchanged_str(orig_str, token_lines_lst):
+    ans = []
+    for tokens in token_lines_lst:
+        s = "".join([token.split(' ')[0] for token in tokens])
+        if s != orig_str:
+            ans.append(tokens)
+
+    return ans
+    # return [tokens for tokens in token_lines_lst if "".join([token.split(' ')[0] for token in tokens]) != orig_str]
+
+
 def sentence_func(knp_lines):
     tokens = [line for line in knp_lines if is_token(line)]
     orig_str = "".join([line.split(' ')[0] for line in tokens])
@@ -131,6 +142,8 @@ def sentence_func(knp_lines):
                         tok_ind = get_token_ind(knp_lines, mod_chunk_ind, mod_chunk_token)
                         ans.extend(replace_token_with_antonym(tokens, tok_ind, mod_chunk_token))
 
+    #この段階で、変換が起こらなかった文を排除する
+    ans = remove_unchanged_str(orig_str, ans)
     ans = ["".join([token_line.split(' ')[0] for token_line in replace_lib.remove_negation_from_banning(token_lines)]) for token_lines in ans]
     ans = [s for s in ans if s != orig_str] #元の文は除く
     ans = list(set(ans)) #重複した文を削除
