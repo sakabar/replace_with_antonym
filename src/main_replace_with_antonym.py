@@ -145,9 +145,11 @@ def sentence_func(knp_lines):
             if mod_chunk_token == "":
                 pass
             else:
-                if get_pos_of_token(mod_chunk_token) == "名詞" or get_pos_of_token(mod_chunk_token) == "形容詞" or get_pos_of_token(mod_chunk_token) == "動詞":
+                if (get_pos_of_token(mod_chunk_token) == "名詞" or get_pos_of_token(mod_chunk_token) == "形容詞") and ("<係:連格>" in mod_chunk_token):
+                    # print "DEBUG:hit"
                     if "反義" in mod_chunk_token:
                         tok_ind = get_token_ind(knp_lines, mod_chunk_ind, mod_chunk_token)
+                        # print "DEBUG: hit"
                         ans.extend(replace_token_with_antonym(tokens, tok_ind, mod_chunk_token))
 
 
