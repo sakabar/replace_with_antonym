@@ -299,13 +299,15 @@ def replace_juman_line_with_antonym(orig_line, pos, lemma, yomi):
         return juman_like_str(lemma, yomi, lemma, basic_pos, info_of_ant, '*', '*', detail_pos)
 
     elif orig_line.split(' ')[7] == '*':
-        #それ以外の、活用がない
+        #それ以外の、活用がない場合
         #活用がない → 反義語も活用しない
         #とりあえず、活用のことは考えず、単に置き換える
+
         #腕は伸ばし(名詞)→腕は縮める(原形)となってしまう…
+        #「腕は伸ばし手を広げないようにしてください。」
         #FIXME
-        # return juman_like_str(lemma, yomi, lemma, pos)
-        return orig_line
+        katuyou_type_of_ant, info_of_ant = get_katuyou_type_and_info_from_juman_dic(basic_pos, lemma, yomi)
+        return juman_like_str(lemma, yomi, lemma, basic_pos, info_of_ant, '*', '*', detail_pos)
 
     elif basic_pos != orig_line.split(' ')[3]:
         #上記以外の場合で、
