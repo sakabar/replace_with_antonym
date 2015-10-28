@@ -3,6 +3,7 @@ import re
 import sexp
 import itertools
 import sys
+import jctconv
 
 
 #子音動詞サ行 5 基本連用形 8の(5,8)という情報から、("子音動詞サ行", "基本連用形")を得る
@@ -430,3 +431,55 @@ def replace_one_word(enumerated_antonym_pairs):
 
     return ans
 
+#チャンクの通し番号(0から始まる)を返す。
+#KNPのprint-numオプションで表示される情報
+def get_chunk_num(chunk_line):
+    if (not is_chunk(chunk_line)):
+        raise Exception('arugment error')
+
+    ans = 0
+    try:
+        ans = int(chunk_line.split(' ')[1])
+    except:
+        raise Exception('Use -print-num option when running KNP')
+
+    return ans
+
+#あるチャンク(動詞を含む)の項の格を変える
+#変換後の「トークン列」を返す
+#これは、チャンク情報などと矛盾させないようにするため。
+#扱いに注意!
+#格は「カタカナ」で与える。
+def change_case(knp_lines, prev_case_katakana, new_case_katakana, verb_chunk_ind):
+    chunk_line = knp_lines[verb_chunk_ind]
+    chunk_num = get_chunk_num(chunk_line)
+
+    #もし同じ項が2つあったときには、後ろ側(より述語に近い方)を取る (ないと思うけど…)
+    #例: (変な文) 山を海を愛す → 「海を」
+    prev_case_chunks = [(mod_chunk_ind, mod_chunk_line) for (mod_chunk_ind, mod_chunk_line) in get_mod_chunk_and_mod_chunk_ind_lst(knp_lines, chunk_num) if (("<係:%s格>" % prev_case_katakana) in mod_chunk_line)]
+
+    #なかったら、空リストを返す
+    if len(prev_case_chunks) == 0:
+        return []
+
+    prev_case_chunk_ind, prev_case_chunk_line = prev_case_chunks[-1]
+
+    #条件に一致する行(格助詞のトークン行)を変換する。
+    #トークン行で、prev_case_chunk_indより後ろで、verb_chunk_indより前のもので、「prev_case」に一致する行をnew_caseに直す?
+    #他の行はそのまま返す
+    def loc_map_func(ind, line, prev_case_chunk_ind, verb_chunk_ind, prev_case_hiragana, new_case_hiragana):
+        if prev_case_chunk_ind < ind < verb_chunk_ind:
+            if is_token(line) and line.startswith('%s %s %s 助詞 9 格助詞' % (prev_case_hiragana, prev_case_hiragana, prev_case_hiragana)):
+                return "%s %s %s 助詞 9 格助詞 1 * 0 * 0 NIL" % (new_case_hiragana, new_case_hiragana, new_case_hiragana)
+            else:
+                return line
+        else:
+            return line
+
+
+    prev_case_hiragana =  jctconv.kata2hira(prev_case_katakana.decode('utf-8')).encode('utf-8')
+    new_case_hiragana =  jctconv.kata2hira(new_case_katakana.decode('utf-8')).encode('utf-8')
+
+    tmp_knp_lines = map(lambda (ind, line): loc_map_func(ind, line, prev_case_chunk_ind, verb_chunk_ind, prev_case_hiragana, new_case_hiragana), enumerate(knp_lines))
+
+    return [line for line in tmp_knp_lines if is_token(line)]
