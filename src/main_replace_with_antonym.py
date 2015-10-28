@@ -19,23 +19,6 @@ def get_normalized_cand_form(knp_line):
     else:
         raise Exception('Error:' + knp_line)
 
-
-#indとhead_token_lineで指定したトークンに反義語が存在した場合、反義語を置き換えてリストにして返す
-#FIXME どう考えても、token_lines[ind] == head_token_lineの関係があるから、重複しているのでは…
-def replace_token_with_antonym(token_lines, ind, head_token_line):
-    if any([(not replace_lib.is_token(line)) for line in token_lines]):
-        raise Exception('argument error')
-
-    antonym_lst = replace_lib.extract_antonyms_from_token_line(ind, head_token_line)
-    # print "B--antonym_lst--"
-    # for antonym_tpl in antonym_lst:
-    #     for a in antonym_tpl:
-    #         print a
-    # print "E--antonym_lst--"
-
-    return [replace_lib.replace_with_antonym_pairs(token_lines, [antonym_pair]) for antonym_pair in antonym_lst]
-
-
 #あるチャンクの主辞のトークンを返す
 #なかったら空文字列を返す
 def get_head_token_of_chunk(knp_lines, chunk_ind):
@@ -60,7 +43,6 @@ def get_head_token_of_chunk(knp_lines, chunk_ind):
 
     ans = [knp_lines[i] for i in xrange(chunk_ind, len(knp_lines)) if replace_lib.is_token(knp_lines[i]) and normalized_cand_form in knp_lines[i]]
     return "" if len(ans) == 0 else ans[0]
-
 
 
 def get_pos_of_token(knp_line):
@@ -110,15 +92,16 @@ def sentence_func(knp_lines):
         #「席を立たないでください」→「席に座ってください」
         wo_to_ni_case_tokens = [line for line in replace_lib.change_case(knp_lines, 'ヲ', 'ニ', last_chunk_ind) if replace_lib.is_token(line)]
         if len(wo_to_ni_case_tokens) != 0:
-            ans.extend(replace_token_with_antonym(wo_to_ni_case_tokens, head_token_ind, head_token_line))
+            ans.extend(replace_lib.get_tokens_lst_replaced_with_antonym(wo_to_ni_case_tokens, head_token_ind, head_token_line))
 
         #ニ格をカラ格に変換した文を生成し、反義語を置き換える
         #「波打ち際に近づかないでください」→「波打ち際から遠ざかってください」
         ni_to_kara_case_tokens = [line for line in replace_lib.change_case(knp_lines, 'ニ', 'カラ', last_chunk_ind) if replace_lib.is_token(line)]
         if len(ni_to_kara_case_tokens) != 0:
-            ans.extend(replace_token_with_antonym(ni_to_kara_case_tokens, head_token_ind, head_token_line))
+            ans.extend(replace_lib.get_tokens_lst_replaced_with_antonym(ni_to_kara_case_tokens, head_token_ind, head_token_line))
 
-        ans.extend(replace_token_with_antonym(tokens, head_token_ind, head_token_line))
+        ans.extend(replace_lib.get_tokens_lst_replaced_with_antonym(tokens, head_token_ind, head_token_line))
+
 
 
     arg_chunks = [(ind, line) for ind, line in enumerate(knp_lines) if replace_lib.is_chunk(line) and line.split(' ')[2] == (str(last_chunk_num) + "D") and re.search("<係:[^>]+>", line)]
@@ -133,7 +116,7 @@ def sentence_func(knp_lines):
             #まず、argの主辞に反義語が存在するかどうか?
             if ("反義" in head_token_of_arg):
                 token_ind = get_token_ind(knp_lines, arg_chunk_ind, head_token_of_arg)
-                ans.extend(replace_token_with_antonym(tokens, token_ind, head_token_of_arg))
+                ans.extend(replace_lib.get_tokens_lst_replaced_with_antonym(tokens, token_ind, head_token_of_arg))
 
         #次に、そのチャンクにかかっている動詞or名詞or形容詞に反義語が存在するか?
         #FIXME これだと、「分かりにくい表現を使わないでください」が変換できない
@@ -148,7 +131,7 @@ def sentence_func(knp_lines):
                     if "反義" in mod_chunk_token:
                         tok_ind = get_token_ind(knp_lines, mod_chunk_ind, mod_chunk_token)
                         # print "DEBUG: hit"
-                        ans.extend(replace_token_with_antonym(tokens, tok_ind, mod_chunk_token))
+                        ans.extend(replace_lib.get_tokens_lst_replaced_with_antonym(tokens, tok_ind, mod_chunk_token))
 
 
     #この段階で、変換が起こらなかった文を排除する
