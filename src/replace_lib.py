@@ -469,7 +469,7 @@ def change_case(knp_lines, prev_case_katakana, new_case_katakana, verb_chunk_ind
     #他の行はそのまま返す
     def loc_map_func(ind, line, prev_case_chunk_ind, verb_chunk_ind, prev_case_hiragana, new_case_hiragana):
         if prev_case_chunk_ind < ind < verb_chunk_ind:
-            if is_token(line) and line.startswith('を を を 助詞 9 格助詞'):
+            if is_token(line) and line.startswith('%s %s %s 助詞 9 格助詞' % (prev_case_hiragana, prev_case_hiragana, prev_case_hiragana)):
                 return "%s %s %s 助詞 9 格助詞 1 * 0 * 0 NIL" % (new_case_hiragana, new_case_hiragana, new_case_hiragana)
             else:
                 return line
