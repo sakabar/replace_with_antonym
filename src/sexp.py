@@ -28,3 +28,7 @@ def get_verb_katuyou(sexp, katuyou_type, verb_form):
     # print verb_form
     raise Exception("%s, %s" % (katuyou_type, verb_form))
 
+def get_katuyou_str_from_id(s_exp, katuyou_type_ind, katuyou_form_ind):
+    ans1 = s_exp[katuyou_type_ind-1][0]
+    ans2 = s_exp[katuyou_type_ind-1][1][katuyou_form_ind-1][0]
+    return (dumps(ans1).encode('utf-8'), dumps(ans2).encode('utf-8'))

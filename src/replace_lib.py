@@ -4,6 +4,16 @@ import sexp
 import itertools
 import sys
 
+
+#子音動詞サ行 5 基本連用形 8の(5,8)という情報から、("子音動詞サ行", "基本連用形")を得る
+def get_katuyou_str_from_id(katuyou_type_ind, katuyou_form_ind):
+    juman_dir = "/Users/sak/local/src/juman-7.01"
+    # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
+    s_exp = sexp.get_sexp(juman_dir + "/dic/JUMAN.katuyou")
+
+    ans = sexp.get_katuyou_str_from_id(s_exp, katuyou_type_ind, katuyou_form_ind)
+    return ans
+
 #活用させる
 def change_katuyou(token_line, katuyou):
     juman_dir = "/Users/sak/local/src/juman-7.01"
@@ -298,7 +308,20 @@ def replace_juman_line_with_antonym(orig_line, pos, lemma, yomi):
         katuyou_type_of_ant, info_of_ant = get_katuyou_type_and_info_from_juman_dic(basic_pos, lemma, yomi)
         return juman_like_str(lemma, yomi, lemma, basic_pos, info_of_ant, '*', '*', detail_pos)
 
-    elif orig_line.split(' ')[7] == '*':
+    #KNPによって品詞変更がされている場合: 元の語の情報を利用する
+    elif "<品詞変更:" in orig_line:
+        #'<品詞変更:伸ばし-のばし-伸ばす-2-0-5-8-"代表表記:伸ばす/のばす 自他動詞:自:伸びる/のびる 反義:動詞:曲げる/まげる;動詞:縮める/ちぢめる">' のような部分
+        pat = re.compile("<品詞変更:([^>]+)>")
+        pos_change_info = pat.search(orig_line).group(1)
+
+        #FIXME ここ、10行くらい後と同じコードになっているので後でリファクタリング。関数でくくりましょう。
+        katuyou_type_of_ant, info_of_ant = get_katuyou_type_and_info_from_juman_dic(basic_pos, lemma, yomi)
+        antonym_juman_like_str = juman_like_str(lemma, yomi, lemma, basic_pos, info_of_ant, '基本形', katuyou_type_of_ant)
+
+        _, katuyou = get_katuyou_str_from_id(int(pos_change_info.split('-')[5]), int(pos_change_info.split('-')[6]))
+        return change_katuyou(antonym_juman_like_str, katuyou)
+
+    elif basic_pos == orig_line.split(' ')[3] and orig_line.split(' ')[7] == '*':
         #それ以外の、活用がない場合
         #活用がない → 反義語も活用しない
         #とりあえず、活用のことは考えず、単に置き換える
