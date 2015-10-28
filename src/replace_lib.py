@@ -387,6 +387,24 @@ def disambiguate_juman_line(juman_lines):
 
     return ans
 
+def is_chunk(knp_line):
+    return knp_line[0] == '*'
+
+def is_basic_phrase(knp_line):
+    return knp_line[0] == '+'
+
+def is_doc_info(knp_line):
+    return knp_line[0] == '#'
+
+def is_EOS(knp_line):
+    return knp_line == "EOS"
+
+def is_token(knp_line):
+    return (not is_chunk(knp_line)) and (not is_basic_phrase(knp_line)) and (not is_doc_info(knp_line)) and (not is_EOS(knp_line))
+
+
+def get_mod_chunk_and_mod_chunk_ind_lst(knp_lines, chunk_num):
+    return [(ind, line) for ind, line in enumerate(knp_lines) if is_chunk(line) and line.split(' ')[2] == (str(chunk_num) + "D")]
 
 
 #「-してはいけません」の直後(にあるはず?)の語を置き換える

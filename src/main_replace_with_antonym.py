@@ -9,22 +9,6 @@ import replace_lib
 #3. headの動詞の項にかかっている動詞・形容詞など
 #の3種類を反義語に置き換える
 
-def is_chunk(knp_line):
-    return knp_line[0] == '*'
-
-def is_basic_phrase(knp_line):
-    return knp_line[0] == '+'
-
-def is_doc_info(knp_line):
-    return knp_line[0] == '#'
-
-def is_EOS(knp_line):
-    return knp_line == "EOS"
-
-def is_token(knp_line):
-    return (not is_chunk(knp_line)) and (not is_basic_phrase(knp_line)) and (not is_doc_info(knp_line)) and (not is_EOS(knp_line))
-
-
 #チャンクなどの行から、正規化代表表記の部分を正規表現でとってくる。
 #チャンクに正規化代表表記がなかったら、エラーを返す。うまくキャッチしてね?
 def get_normalized_cand_form(knp_line):
@@ -39,7 +23,7 @@ def get_normalized_cand_form(knp_line):
 #indとhead_token_lineで指定したトークンに反義語が存在した場合、反義語を置き換えてリストにして返す
 #FIXME どう考えても、token_lines[ind] == head_token_lineの関係があるから、重複しているのでは…
 def replace_token_with_antonym(token_lines, ind, head_token_line):
-    if any([(not is_token(line)) for line in token_lines]):
+    if any([(not replace_lib.is_token(line)) for line in token_lines]):
         raise Exception('argument error')
 
     antonym_lst = replace_lib.extract_antonyms_from_token_line(ind, head_token_line)
@@ -57,7 +41,7 @@ def replace_token_with_antonym(token_lines, ind, head_token_line):
 def get_head_token_of_chunk(knp_lines, chunk_ind):
     chunk_line = knp_lines[chunk_ind]
 
-    if (not is_chunk(chunk_line)):
+    if (not replace_lib.is_chunk(chunk_line)):
         raise Exception('arg is not chunk')
 
     chunk_line = knp_lines[chunk_ind]
@@ -74,13 +58,13 @@ def get_head_token_of_chunk(knp_lines, chunk_ind):
     if ("+" in normalized_cand_form):
         normalized_cand_form = normalized_cand_form.split('+')[0]
 
-    ans = [knp_lines[i] for i in xrange(chunk_ind, len(knp_lines)) if is_token(knp_lines[i]) and normalized_cand_form in knp_lines[i]]
+    ans = [knp_lines[i] for i in xrange(chunk_ind, len(knp_lines)) if replace_lib.is_token(knp_lines[i]) and normalized_cand_form in knp_lines[i]]
     return "" if len(ans) == 0 else ans[0]
 
 
 
 def get_pos_of_token(knp_line):
-    if (not is_token(knp_line)):
+    if (not replace_lib.is_token(knp_line)):
         raise Exception('arg is not token')
 
     return knp_line.split(' ')[3]
@@ -98,11 +82,11 @@ def remove_unchanged_str(orig_str, token_lines_lst):
 
 
 def sentence_func(knp_lines):
-    tokens = [line for line in knp_lines if is_token(line)]
+    tokens = [line for line in knp_lines if replace_lib.is_token(line)]
     orig_str = "".join([line.split(' ')[0] for line in tokens])
 
     #最後の文節のインデックス, その正規化代表表記
-    last_chunk_ind, last_chunk_line = [(ind, line) for ind, line in enumerate(knp_lines) if is_chunk(line) and ("-1D" in line)][0]
+    last_chunk_ind, last_chunk_line = [(ind, line) for ind, line in enumerate(knp_lines) if replace_lib.is_chunk(line) and ("-1D" in line)][0]
     last_chunk_num = get_chunk_num(last_chunk_line)
 
     #最後の文節内のheadのトークン
@@ -123,7 +107,7 @@ def sentence_func(knp_lines):
         ans.extend(replace_token_with_antonym(tokens, head_token_ind, head_token_line))
 
 
-    arg_chunks = [(ind, line) for ind, line in enumerate(knp_lines) if is_chunk(line) and line.split(' ')[2] == (str(last_chunk_num) + "D") and re.search("<係:[^>]+>", line)]
+    arg_chunks = [(ind, line) for ind, line in enumerate(knp_lines) if replace_lib.is_chunk(line) and line.split(' ')[2] == (str(last_chunk_num) + "D") and re.search("<係:[^>]+>", line)]
     for arg_chunk_ind, arg_chunk in arg_chunks:
         head_token_of_arg = get_head_token_of_chunk(knp_lines, arg_chunk_ind)
         if head_token_of_arg == "":
@@ -140,7 +124,7 @@ def sentence_func(knp_lines):
         #次に、そのチャンクにかかっている動詞or名詞or形容詞に反義語が存在するか?
         #FIXME これだと、「分かりにくい表現を使わないでください」が変換できない
         chunk_num = get_chunk_num(arg_chunk)
-        for mod_chunk_ind, mod_chunk in [(ind, line) for ind, line in enumerate(knp_lines) if is_chunk(line) and line.split(' ')[2] == (str(chunk_num) + "D")]:
+        for mod_chunk_ind, mod_chunk in replace_lib.get_mod_chunk_and_mod_chunk_ind_lst(knp_lines, chunk_num):
             mod_chunk_token = get_head_token_of_chunk(knp_lines, mod_chunk_ind)
             if mod_chunk_token == "":
                 pass
@@ -163,11 +147,11 @@ def sentence_func(knp_lines):
 
 #トークンだけで数えた時のインデックスを返す
 def get_token_ind(knp_lines, chunk_ind, token_line):
-    return [tok_ind for (tok_ind, (ind, line)) in enumerate([(i,knp_line) for i, knp_line in enumerate(knp_lines) if is_token(knp_line)]) if ind > chunk_ind and line == token_line][0]
+    return [tok_ind for (tok_ind, (ind, line)) in enumerate([(i,knp_line) for i, knp_line in enumerate(knp_lines) if replace_lib.is_token(knp_line)]) if ind > chunk_ind and line == token_line][0]
 
 
 def get_chunk_num(chunk_line):
-    if (not is_chunk(chunk_line)):
+    if (not replace_lib.is_chunk(chunk_line)):
         raise Exception('arugment error')
 
     ans = 0
