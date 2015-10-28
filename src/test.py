@@ -103,6 +103,16 @@ class TestMain(unittest.TestCase):
 
         self.assertEquals([actual], [expected])
 
+    def test_replace_juman_line_with_antonym_6(self):
+        line = '私用 しよう 私用 名詞 6 サ変名詞 2 * 0 * 0 "代表表記:私用/しよう カテゴリ:抽象物 反義:名詞-普通名詞:公用/こうよう"'
+        pos = "名詞-普通名詞"
+        lemma = "公用"
+        yomi = "こうよう"
+
+        actual = replace_lib.replace_juman_line_with_antonym(line, pos, lemma, yomi)
+        expected = '公用 こうよう 公用 名詞 * 普通名詞 * * * * * "代表表記:公用/こうよう カテゴリ:抽象物 ドメイン:政治 反義:名詞-サ変名詞:私用/しよう"'
+        self.assertEquals([actual], [expected])
+
 
     def test_replace_with_antonym_pairs0(self):
         token_lines = ['あ あ あ 感動詞 12 * 0 * 0 * 0 "代表表記:あ/あ"']
