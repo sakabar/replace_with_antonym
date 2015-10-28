@@ -24,6 +24,7 @@ def change_katuyou(token_line, katuyou):
     yomi = token_line.split(' ')[1]
     lemma = token_line.split(' ')[2]
     pos = token_line.split(' ')[3]
+    detail_pos = token_line.split(' ')[5]
     orig_katuyou = token_line.split(' ')[9]
     katuyou_type = token_line.split(' ')[7]
     info = " ".join(token_line.split(' ')[11:]) #「"代表表記:歩く/あるく" <代表表記:歩く/あるく><正規化代表表記:歩く/あるく><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞>」のように、スペースで区切られてしまっているのを結合する。
@@ -44,7 +45,7 @@ def change_katuyou(token_line, katuyou):
         katuyou_gobi = "" if katuyou_gobi == '*' else katuyou_gobi
         surf = gokan + katuyou_gobi
         new_yomi = yomi_gokan + katuyou_gobi
-        return juman_like_str(surf, new_yomi, lemma, pos, info, katuyou, katuyou_type)
+        return juman_like_str(surf, new_yomi, lemma, pos, info, katuyou, katuyou_type, detail_pos)
 
     except:
         #変換しない
@@ -57,7 +58,7 @@ def remove_negation_from_suruna(token_lines):
     #文末から見る
     lst = [tmp for tmp in enumerate(token_lines)]
     for ind, line in lst[::-1]:
-        if ind > 0 and line == 'な な な 助詞 9 終助詞 4 * 0 * 0 NIL <文末><表現文末><かな漢字><ひらがな><付属>' and ans_lines[ind-1].split(' ')[3] == '動詞' and ans_lines[ind-1].split(' ')[9] == "基本形":
+        if ind > 0 and line == 'な な な 助詞 9 終助詞 4 * 0 * 0 NIL <文末><表現文末><かな漢字><ひらがな><付属>' and (ans_lines[ind-1].split(' ')[3] == '動詞' or ans_lines[ind-1].split(' ')[5] == '動詞性接尾辞') and ans_lines[ind-1].split(' ')[9] == "基本形":
             ans_lines[ind-1] = change_katuyou(ans_lines[ind-1], "基本連用形")
             ans_lines[ind] = 'ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"'
             break
@@ -71,9 +72,9 @@ def remove_negation_from_ikemasen(token_lines):
     #文末から見る
     lst = [tmp for tmp in enumerate(token_lines)]
     for ind, line in lst[::-1]:
-        cond_ikemasen = (ind-4 >= 0 and ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-4].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-3].split(' ')[0] == 'は' and (ans_lines[ind-2].split(' ')[0] == 'いけ' or ans_lines[ind-2].split(' ')[0] == 'なり') and ans_lines[ind-1].split(' ')[0] == 'ませ' and ans_lines[ind].split(' ')[0] == 'ん')
-        cond_naranai = ind-3 >= 0 and ans_lines[ind-3].split(' ')[3] == '動詞' and ans_lines[ind-3].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-2].split(' ')[0] == 'は' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ない'
-        cond_ikenai = ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-1].split(' ')[0] == 'は' and ans_lines[ind].split(' ')[0] == 'いけない'
+        cond_ikemasen = (ind-4 >= 0 and (ans_lines[ind-4].split(' ')[3] == '動詞' or ans_lines[ind-4].split(' ')[5] == '動詞性接尾辞') and ans_lines[ind-4].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-3].split(' ')[0] == 'は' and (ans_lines[ind-2].split(' ')[0] == 'いけ' or ans_lines[ind-2].split(' ')[0] == 'なり') and ans_lines[ind-1].split(' ')[0] == 'ませ' and ans_lines[ind].split(' ')[0] == 'ん')
+        cond_naranai = ind-3 >= 0 and (ans_lines[ind-3].split(' ')[3] == '動詞' or ans_lines[ind-3].split(' ')[5] == '動詞性接尾辞') and ans_lines[ind-3].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-2].split(' ')[0] == 'は' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ない'
+        cond_ikenai = ind-2 >= 0 and (ans_lines[ind-2].split(' ')[3] == '動詞' or ans_lines[ind-2].split(' ')[5] == '動詞性接尾辞') and ans_lines[ind-2].split(' ')[9] == 'タ系連用テ形' and ans_lines[ind-1].split(' ')[0] == 'は' and ans_lines[ind].split(' ')[0] == 'いけない'
         if cond_ikemasen:
             new_ind = ind - 4
             ans_lines_before= [] if new_ind == 0 else ans_lines[0:new_ind]
@@ -116,10 +117,12 @@ def remove_negation_from_ikemasen(token_lines):
 def remove_negation_from_naide_kudasai(token_lines):
     ans_lines = [s for s in token_lines]
 
+
+
     #文末から見る
     lst = [tmp for tmp in enumerate(token_lines)]
     for ind, line in lst[::-1]:
-        cond = ind-2 >= 0 and ans_lines[ind-2].split(' ')[3] == '動詞' and ans_lines[ind-2].split(' ')[9] == '未然形' and ans_lines[ind-1].split(' ')[0] == 'ないで' and (ans_lines[ind].split(' ')[1] == 'ください' or ans_lines[ind].split(' ')[0] == 'ね' or ans_lines[ind].split(' ')[0] == 'よ' or ans_lines[ind].split(' ')[0] == 'くれ')
+        cond = ind-2 >= 0 and (ans_lines[ind-2].split(' ')[3] == '動詞' or ans_lines[ind-2].split(' ')[5] == '動詞性接尾辞') and ans_lines[ind-2].split(' ')[9] == '未然形' and ans_lines[ind-1].split(' ')[0] == 'ないで' and (ans_lines[ind].split(' ')[1] == 'ください' or ans_lines[ind].split(' ')[0] == 'ね' or ans_lines[ind].split(' ')[0] == 'よ' or ans_lines[ind].split(' ')[0] == 'くれ')
         if cond:
             ans_lines_before= [] if ind-2 == 0 else ans_lines[0:ind-2]
             ans_lines_after =  ans_lines[ind:]
@@ -137,9 +140,9 @@ def remove_negation_from_go_naranaide(token_lines):
     #文末から見る
     lst = [tmp for tmp in enumerate(token_lines)]
     for ind, line in lst[::-1]:
-        cond_ni = ind-4 >= 0 and (ans_lines[ind-4].split(' ')[0] == 'お' or ans_lines[ind-4].split(' ')[0] == 'ご') and ans_lines[ind-3].split(' ')[3] == '動詞' and ans_lines[ind-3].split(' ')[9] == '基本連用形' and ans_lines[ind-2].split(' ')[0] == 'に' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ないで'
+        cond_ni = ind-4 >= 0 and (ans_lines[ind-4].split(' ')[0] == 'お' or ans_lines[ind-4].split(' ')[0] == 'ご') and (ans_lines[ind-3].split(' ')[3] == '動詞' or ans_lines[ind-3].split(' ')[5] == '動詞性接尾辞') and ans_lines[ind-3].split(' ')[9] == '基本連用形' and ans_lines[ind-2].split(' ')[0] == 'に' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ないで'
 
-        cond_niha = ind-5 >= 0 and (ans_lines[ind-5].split(' ')[0] == 'お' or ans_lines[ind-5].split(' ')[0] == 'ご') and ((ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-4].split(' ')[9] == '基本連用形') or (ans_lines[ind-4].split(' ')[3] == '名詞')) and ans_lines[ind-3].split(' ')[0] == 'に' and ans_lines[ind-2].split(' ')[0] == 'は' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ないで'
+        cond_niha = ind-5 >= 0 and (ans_lines[ind-5].split(' ')[0] == 'お' or ans_lines[ind-5].split(' ')[0] == 'ご') and (((ans_lines[ind-4].split(' ')[3] == '動詞' or ans_lines[ind-4].split(' ')[5] == '動詞性接尾辞') and ans_lines[ind-4].split(' ')[9] == '基本連用形') or (ans_lines[ind-4].split(' ')[3] == '名詞')) and ans_lines[ind-3].split(' ')[0] == 'に' and ans_lines[ind-2].split(' ')[0] == 'は' and ans_lines[ind-1].split(' ')[0] == 'なら' and ans_lines[ind].split(' ')[0] == 'ないで'
 
         if cond_ni:
             ans_lines_before= ans_lines[0:ind-1]
@@ -167,7 +170,7 @@ def remove_negation_from_naiyouni(token_lines):
     #文末から見る
     lst = [tmp for tmp in enumerate(token_lines)]
     for ind, line in lst[::-1]:
-        cond = ind-4 >= 0 and ans_lines[ind-4].split(' ')[3] == '動詞' and ans_lines[ind-3].split(' ')[0] == 'ない' and ans_lines[ind-2].split(' ')[0] == 'ように' and ans_lines[ind-1].split(' ')[0] == 'して' and ans_lines[ind].split(' ')[1] == 'ください'
+        cond = ind-4 >= 0 and (ans_lines[ind-4].split(' ')[3] == '動詞' or ans_lines[ind-4].split(' ')[5] == '動詞性接尾辞') and ans_lines[ind-3].split(' ')[0] == 'ない' and ans_lines[ind-2].split(' ')[0] == 'ように' and ans_lines[ind-1].split(' ')[0] == 'して' and ans_lines[ind].split(' ')[1] == 'ください'
 
         if cond:
             ans_lines_before= [] if ind-4 == 0 else ans_lines[0:ind-4]
@@ -483,3 +486,55 @@ def change_case(knp_lines, prev_case_katakana, new_case_katakana, verb_chunk_ind
     tmp_knp_lines = map(lambda (ind, line): loc_map_func(ind, line, prev_case_chunk_ind, verb_chunk_ind, prev_case_hiragana, new_case_hiragana), enumerate(knp_lines))
 
     return [line for line in tmp_knp_lines if is_token(line)]
+
+
+#indとhead_token_lineで指定したトークンに反義語が存在した場合、反義語を置き換えてリストにして返す
+#FIXME どう考えても、token_lines[ind] == head_token_lineの関係があるから、重複しているのでは…
+def replace_token_with_antonym(token_lines, ind, head_token_line):
+    if any([(not is_token(line)) for line in token_lines]):
+        raise Exception('argument error')
+
+    antonym_lst = extract_antonyms_from_token_line(ind, head_token_line)
+    # print "B--antonym_lst--"
+    # for antonym_tpl in antonym_lst:
+    #     for a in antonym_tpl:
+    #         print a
+    # print "E--antonym_lst--"
+
+    return [replace_with_antonym_pairs(token_lines, [antonym_pair]) for antonym_pair in antonym_lst]
+
+
+
+#「反義語で置き換えたトークンのリスト」のリストを得る
+def get_tokens_lst_replaced_with_antonym(tokens, ind, head_token_line):
+    tokens_lst = replace_token_with_antonym(tokens, ind, head_token_line)
+    ans = []
+    ans.extend(tokens_lst)
+
+    for tokens in tokens_lst:
+        verb_lst = [(ind, token_line) for ind, token_line in enumerate(tokens) if token_line.split(' ')[3] == '動詞']
+
+        #動詞が文中に存在した場合、末尾の動詞を「タ系連用テ形」に変え、動詞性接尾辞「ミル」「オク」「イル」「シマウ」を末尾の動詞の活用形にして結合する。
+        if len(verb_lst) != 0:
+            last_verb_ind, last_verb_token = verb_lst[-1]
+            last_verb_katuyou_form = last_verb_token.split(' ')[9]
+            last_verb_te_renyou = change_katuyou(last_verb_token, "タ系連用テ形")
+
+            verb_like_suffix_words = """
+いる いる いる 接尾辞 14 動詞性接尾辞 7 母音動詞 1 基本形 2 "代表表記:いる/いる"
+みる みる みる 接尾辞 14 動詞性接尾辞 7 母音動詞 1 基本形 2 "代表表記:みる/みる"
+おく おく おく 接尾辞 14 動詞性接尾辞 7 子音動詞カ行 2 基本形 2 "代表表記:おく/おく"
+しまう しまう しまう 接尾辞 14 動詞性接尾辞 7 子音動詞ワ行 12 基本形 2 "代表表記:しまう/しまう"
+""".split('\n')[1:-1]
+
+            for verb_like_suffix_token_line in verb_like_suffix_words:
+                verb_like_token = change_katuyou(verb_like_suffix_token_line, last_verb_katuyou_form)
+
+                local_ans = []
+                local_ans.extend(tokens[0:last_verb_ind])
+                local_ans.append(last_verb_te_renyou)
+                local_ans.append(verb_like_token)
+                local_ans.extend(tokens[last_verb_ind+1:])
+                ans.append(local_ans)
+
+    return ans

@@ -418,6 +418,15 @@ class TestMain(unittest.TestCase):
         self.assertEquals([actual], [expected])
 
 
+    def test_change_katuyou3(self):
+        token_line = 'みる みる みる 接尾辞 14 動詞性接尾辞 7 母音動詞 1 基本形 2 "代表表記:みる/みる"'
+        katuyou = '基本連用形'
+        actual = replace_lib.change_katuyou(token_line, katuyou)
+        expected = 'み み みる 接尾辞 * 動詞性接尾辞 * 母音動詞 * 基本連用形 * "代表表記:みる/みる"'
+
+        self.assertEquals([actual], [expected])
+
+
     def test_change_case_wo_to_ni(self):
         knp_lines = """
 # S-ID:1 KNP:4.12-CF1.1 DATE:2015/10/28 SCORE:-8.29897
