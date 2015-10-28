@@ -524,11 +524,11 @@ def get_tokens_lst_replaced_with_antonym(tokens, ind, head_token_line):
             last_verb_katuyou_form = last_verb_token.split(' ')[9]
             last_verb_te_renyou = change_katuyou(last_verb_token, "タ系連用テ形")
 
+            # みる みる みる 接尾辞 14 動詞性接尾辞 7 母音動詞 1 基本形 2 "代表表記:みる/みる"
+            # しまう しまう しまう 接尾辞 14 動詞性接尾辞 7 子音動詞ワ行 12 基本形 2 "代表表記:しまう/しまう"
             verb_like_suffix_words = """
 いる いる いる 接尾辞 14 動詞性接尾辞 7 母音動詞 1 基本形 2 "代表表記:いる/いる"
-みる みる みる 接尾辞 14 動詞性接尾辞 7 母音動詞 1 基本形 2 "代表表記:みる/みる"
 おく おく おく 接尾辞 14 動詞性接尾辞 7 子音動詞カ行 2 基本形 2 "代表表記:おく/おく"
-しまう しまう しまう 接尾辞 14 動詞性接尾辞 7 子音動詞ワ行 12 基本形 2 "代表表記:しまう/しまう"
 """.split('\n')[1:-1]
 
             for verb_like_suffix_token_line in verb_like_suffix_words:
