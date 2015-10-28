@@ -87,7 +87,7 @@ def sentence_func(knp_lines):
 
     #最後の文節のインデックス, その正規化代表表記
     last_chunk_ind, last_chunk_line = [(ind, line) for ind, line in enumerate(knp_lines) if replace_lib.is_chunk(line) and ("-1D" in line)][0]
-    last_chunk_num = get_chunk_num(last_chunk_line)
+    last_chunk_num = replace_lib.get_chunk_num(last_chunk_line)
 
     #最後の文節内のheadのトークン
     head_token_line = ""
@@ -101,9 +101,23 @@ def sentence_func(knp_lines):
 
     ans = []
 
+    #否定されている動詞は反義語を持つか?
     if "反義" in head_token_line:
         #最後の文節内のトークンを取るので、もし同一のトークンが複数あった場合は最後のものを取る
         head_token_ind = [ind for ind, line in enumerate(tokens) if line == head_token_line][-1]
+
+        #ヲ格をニ格に変換した文を生成し、反義語を置き換える
+        #「席を立たないでください」→「席に座ってください」
+        wo_to_ni_case_tokens = [line for line in replace_lib.change_case(knp_lines, 'ヲ', 'ニ', last_chunk_ind) if replace_lib.is_token(line)]
+        if len(wo_to_ni_case_tokens) != 0:
+            ans.extend(replace_token_with_antonym(wo_to_ni_case_tokens, head_token_ind, head_token_line))
+
+        #ニ格をカラ格に変換した文を生成し、反義語を置き換える
+        #「波打ち際に近づかないでください」→「波打ち際から遠ざかってください」
+        ni_to_kara_case_tokens = [line for line in replace_lib.change_case(knp_lines, 'ニ', 'カラ', last_chunk_ind) if replace_lib.is_token(line)]
+        if len(ni_to_kara_case_tokens) != 0:
+            ans.extend(replace_token_with_antonym(ni_to_kara_case_tokens, head_token_ind, head_token_line))
+
         ans.extend(replace_token_with_antonym(tokens, head_token_ind, head_token_line))
 
 
@@ -123,7 +137,7 @@ def sentence_func(knp_lines):
 
         #次に、そのチャンクにかかっている動詞or名詞or形容詞に反義語が存在するか?
         #FIXME これだと、「分かりにくい表現を使わないでください」が変換できない
-        chunk_num = get_chunk_num(arg_chunk)
+        chunk_num = replace_lib.get_chunk_num(arg_chunk)
         for mod_chunk_ind, mod_chunk in replace_lib.get_mod_chunk_and_mod_chunk_ind_lst(knp_lines, chunk_num):
             mod_chunk_token = get_head_token_of_chunk(knp_lines, mod_chunk_ind)
             if mod_chunk_token == "":
@@ -148,20 +162,6 @@ def sentence_func(knp_lines):
 #トークンだけで数えた時のインデックスを返す
 def get_token_ind(knp_lines, chunk_ind, token_line):
     return [tok_ind for (tok_ind, (ind, line)) in enumerate([(i,knp_line) for i, knp_line in enumerate(knp_lines) if replace_lib.is_token(knp_line)]) if ind > chunk_ind and line == token_line][0]
-
-
-def get_chunk_num(chunk_line):
-    if (not replace_lib.is_chunk(chunk_line)):
-        raise Exception('arugment error')
-
-    ans = 0
-    try:
-        ans = int(chunk_line.split(' ')[1])
-    except:
-        raise Exception('Use -print-num option when running KNP')
-
-    return ans
-
 
 def main():
     knp_lines = []
