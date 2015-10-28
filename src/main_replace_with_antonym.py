@@ -43,6 +43,11 @@ def replace_token_with_antonym(token_lines, ind, head_token_line):
         raise Exception('argument error')
 
     antonym_lst = replace_lib.extract_antonyms_from_token_line(ind, head_token_line)
+    # print "B--antonym_lst--"
+    # for antonym_tpl in antonym_lst:
+    #     for a in antonym_tpl:
+    #         print a
+    # print "E--antonym_lst--"
 
     return [replace_lib.replace_with_antonym_pairs(token_lines, [antonym_pair]) for antonym_pair in antonym_lst]
 
@@ -105,6 +110,7 @@ def sentence_func(knp_lines):
     try:
         head_token_line = get_head_token_of_chunk(knp_lines, last_chunk_ind)
     except:
+        Exception('No head token')
         # print orig_str + '\t' + 'ERROR'
         return #FIXME 本当はこうしたくないけど、仕方ない。
 
@@ -123,11 +129,13 @@ def sentence_func(knp_lines):
         if head_token_of_arg == "":
             pass
         else:
-            if get_pos_of_token(head_token_of_arg) == "名詞" or ("<修飾>" in arg_chunk):
-                #まず、argの主辞の名詞に反義語が存在するかどうか?
-                if "反義" in head_token_of_arg:
-                    token_ind = get_token_ind(knp_lines, arg_chunk_ind, head_token_of_arg)
-                    ans.extend(replace_token_with_antonym(tokens, token_ind, head_token_of_arg))
+
+            # pat_case = re.compile("<係:[^>]+格>")
+            # if ("<修飾>" in arg_chunk) or pat_case.search(arg_chunk):
+            #まず、argの主辞に反義語が存在するかどうか?
+            if ("反義" in head_token_of_arg):
+                token_ind = get_token_ind(knp_lines, arg_chunk_ind, head_token_of_arg)
+                ans.extend(replace_token_with_antonym(tokens, token_ind, head_token_of_arg))
 
         #次に、そのチャンクにかかっている動詞or名詞or形容詞に反義語が存在するか?
         #FIXME これだと、「分かりにくい表現を使わないでください」が変換できない
@@ -141,6 +149,7 @@ def sentence_func(knp_lines):
                     if "反義" in mod_chunk_token:
                         tok_ind = get_token_ind(knp_lines, mod_chunk_ind, mod_chunk_token)
                         ans.extend(replace_token_with_antonym(tokens, tok_ind, mod_chunk_token))
+
 
     #この段階で、変換が起こらなかった文を排除する
     ans = remove_unchanged_str(orig_str, ans)

@@ -80,6 +80,29 @@ class TestMain(unittest.TestCase):
         expected = '複雑に ふくざつに 複雑だ 形容詞 * * * ナ形容詞 * ダ列基本連用形 * "代表表記:複雑だ/ふくざつだ 反義:形容詞:簡単だ/かんたんだ;形容詞:単純だ/たんじゅんだ"'
         self.assertEquals([actual], [expected])
 
+    def test_replace_juman_line_with_antonym4(self):
+        line = 'ウソ うそ ウソ 名詞 6 普通名詞 1 * 0 * 0 "代表表記:嘘/うそ カテゴリ:抽象物 反義:形容詞:本当だ/ほんとうだ" <代表表記:嘘/うそ><カテゴリ:抽象物><反義:形容詞:本当だ/ほんとうだ><正規化代表表記:嘘/うそ><文頭><記英数カ><カタカナ><名詞相当語><自立><内容語><タグ単位始><文節始><固有キー><文節主辞><係:ト格>'
+
+        pos = "形容詞"
+        lemma = "本当だ"
+        yomi = "ほんとうだ"
+
+        actual = replace_lib.replace_juman_line_with_antonym(line, pos, lemma, yomi)
+        expected = '本当 ほんとう 本当だ 形容詞 * * * ナノ形容詞 * 語幹 * "代表表記:本当だ/ほんとうだ 反義:名詞-普通名詞:嘘/うそ"'
+        self.assertEquals([actual], [expected])
+
+    def test_replace_juman_line_with_antonym5(self):
+        line = '本当だ ほんとうだ 本当だ 形容詞 3 * 0 ナノ形容詞 22 基本形 2 "代表表記:本当だ/ほんとうだ 反義:名詞-普通名詞:嘘/うそ" <代表表記:本当だ/ほんとうだ><反義:名詞-普通名詞:嘘/うそ><正規化代表表記:本当だ/ほんとうだ><文頭><かな漢字><活用語><自立><内容語><タグ単位始><文節始><文節主辞><係:ト格>'
+
+        pos = "名詞-普通名詞"
+        lemma = "嘘"
+        yomi = "うそ"
+
+        actual = replace_lib.replace_juman_line_with_antonym(line, pos, lemma, yomi)
+        expected = '嘘 うそ 嘘 名詞 * 普通名詞 * * * * * "代表表記:嘘/うそ カテゴリ:抽象物 反義:形容詞:本当だ/ほんとうだ"'
+
+        self.assertEquals([actual], [expected])
+
 
     def test_replace_with_antonym_pairs0(self):
         token_lines = ['あ あ あ 感動詞 12 * 0 * 0 * 0 "代表表記:あ/あ"']
