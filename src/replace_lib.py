@@ -204,6 +204,10 @@ def remove_negation_from_banning(token_lines):
 #jumanの辞書をサーチして、ヒットした行を返す
 #品詞を指定するのは、内容語と接尾辞で辞書ファイルが異なるため
 def search_lemma(pos, lemma, yomi):
+    #「来る」だけはContentW.dicで例外的に読みに漢字が含まれているため、別に扱う必要がある。
+    if pos == "動詞" and lemma == "来る" and yomi == "くる":
+        return '(動詞 ((読み 来る)(見出し語 (来る 0.8))(活用型 カ変動詞来)(意味情報 "代表表記:来る/くる 反義:動詞:帰る/かえる")))'
+
     juman_dir = "/Users/sak/local/src/juman-7.01"
     # juman_dir = "/home/lr/tsakaki/local/src/juman-7.0"
 
