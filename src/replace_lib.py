@@ -278,10 +278,29 @@ def juman_like_str(surf, yomi, lemma, pos, info="NIL", katuyou="*", katuyou_type
 
 def replace_juman_line_with_antonym(orig_line, pos, lemma, yomi):
     basic_pos = "".join(list(itertools.takewhile(lambda ch: ch != '-', pos))) #動くと思うけど、もっといい書き方ありそう
+    detail_pos = "".join(list(itertools.dropwhile(lambda ch: ch != '-', pos))[1:])
 
-    if orig_line.split(' ')[7] == '*':
+    #「ウソ(名詞)」→「本当だ(形容詞)」など
+    #語幹に置き換える
+    if orig_line.split(' ')[3] == '名詞' and basic_pos == '形容詞':
+        # katuyou = orig_line.split(' ')[9]
+        katuyou_type_of_ant, info_of_ant = get_katuyou_type_and_info_from_juman_dic(basic_pos, lemma, yomi)
+        if katuyou_type_of_ant == 'ナノ形容詞' or katuyou_type_of_ant == 'ナ形容詞':
+            antonym_juman_like_str = juman_like_str(lemma, yomi, lemma, basic_pos, info_of_ant, '基本形', katuyou_type_of_ant)
+            return change_katuyou(antonym_juman_like_str, '語幹')
+        else:
+            return orig_line
+
+    #「本当だ(形容詞)」→「嘘(名詞)だ」
+    #基本形の場合からの変換のみを扱う
+    elif orig_line.split(' ')[3] == '形容詞' and orig_line.split(' ')[9] == '基本形' and basic_pos == '名詞':
+        # katuyou = orig_line.split(' ')[9]
+        katuyou_type_of_ant, info_of_ant = get_katuyou_type_and_info_from_juman_dic(basic_pos, lemma, yomi)
+        return juman_like_str(lemma, yomi, lemma, basic_pos, info_of_ant, '*', '*', detail_pos)
+
+    elif orig_line.split(' ')[7] == '*':
+        #それ以外の、活用がない
         #活用がない → 反義語も活用しない
-        #というのはウソで、「ウソ(名詞)」→「本当だ(形容詞)」というパターンがある
         #とりあえず、活用のことは考えず、単に置き換える
         #腕は伸ばし(名詞)→腕は縮める(原形)となってしまう…
         #FIXME
@@ -289,17 +308,16 @@ def replace_juman_line_with_antonym(orig_line, pos, lemma, yomi):
         return orig_line
 
     elif basic_pos != orig_line.split(' ')[3]:
-        #同じ品詞でない場合は変換しない(本当だ[形]→ウソ[名])
-        #「ウソだと思わないでください」→「本当だと思ってください」
-        #を変換しないということなので、ぐぬぬ…良くないぞ。
+        #上記以外の場合で、
+        #同じ品詞でない場合は変換しない
         #FIXME
         return orig_line
 
     else:
         #活用がある
         katuyou = orig_line.split(' ')[9]
-        katuyou_type_of_ant, info_of_ant = get_katuyou_type_and_info_from_juman_dic(pos, lemma, yomi)
-        antonym_juman_like_str = juman_like_str(lemma, yomi, lemma, pos, info_of_ant, '基本形', katuyou_type_of_ant)
+        katuyou_type_of_ant, info_of_ant = get_katuyou_type_and_info_from_juman_dic(basic_pos, lemma, yomi)
+        antonym_juman_like_str = juman_like_str(lemma, yomi, lemma, basic_pos, info_of_ant, '基本形', katuyou_type_of_ant)
         return change_katuyou(antonym_juman_like_str, katuyou)
 
 
