@@ -509,6 +509,37 @@ def replace_token_with_antonym(token_lines, ind, head_token_line):
 
 
 
+#引数として与えられたトークン行にいくつかの動詞性接尾辞(テアル、テオク)を挿入したトークン行のリスト(文字列のリストのリスト)を返す
+def get_token_lines_lst_inserted_verb_like_suffix_into(tokens):
+    ans = []
+    verb_lst = [(ind, token_line) for ind, token_line in enumerate(tokens) if token_line.split(' ')[3] == '動詞']
+
+    #動詞が文中に存在した場合、末尾の動詞を「タ系連用テ形」に変え、動詞性接尾辞「ミル」「オク」「イル」「シマウ」を末尾の動詞の活用形にして結合する。
+    if len(verb_lst) != 0:
+        last_verb_ind, last_verb_token = verb_lst[-1]
+        last_verb_katuyou_form = last_verb_token.split(' ')[9]
+        last_verb_te_renyou = change_katuyou(last_verb_token, "タ系連用テ形")
+
+        verb_like_suffix_words = """
+いる いる いる 接尾辞 14 動詞性接尾辞 7 母音動詞 1 基本形 2 "代表表記:いる/いる"
+おく おく おく 接尾辞 14 動詞性接尾辞 7 子音動詞カ行 2 基本形 2 "代表表記:おく/おく"
+""".split('\n')[1:-1]
+
+        for verb_like_suffix_token_line in verb_like_suffix_words:
+            verb_like_token = change_katuyou(verb_like_suffix_token_line, last_verb_katuyou_form)
+
+            ans_token_lines = []
+            ans_token_lines.extend(tokens[0:last_verb_ind])
+            ans_token_lines.append(last_verb_te_renyou)
+            ans_token_lines.append(verb_like_token)
+            ans_token_lines.extend(tokens[last_verb_ind+1:])
+            ans.append(ans_token_lines)
+
+    return ans
+
+
+
+
 #「反義語で置き換えたトークンのリスト」のリストを得る
 def get_tokens_lst_replaced_with_antonym(tokens, ind, head_token_line):
     tokens_lst = replace_token_with_antonym(tokens, ind, head_token_line)
@@ -516,29 +547,7 @@ def get_tokens_lst_replaced_with_antonym(tokens, ind, head_token_line):
     ans.extend(tokens_lst)
 
     for tokens in tokens_lst:
-        verb_lst = [(ind, token_line) for ind, token_line in enumerate(tokens) if token_line.split(' ')[3] == '動詞']
-
-        #動詞が文中に存在した場合、末尾の動詞を「タ系連用テ形」に変え、動詞性接尾辞「ミル」「オク」「イル」「シマウ」を末尾の動詞の活用形にして結合する。
-        if len(verb_lst) != 0:
-            last_verb_ind, last_verb_token = verb_lst[-1]
-            last_verb_katuyou_form = last_verb_token.split(' ')[9]
-            last_verb_te_renyou = change_katuyou(last_verb_token, "タ系連用テ形")
-
-            # みる みる みる 接尾辞 14 動詞性接尾辞 7 母音動詞 1 基本形 2 "代表表記:みる/みる"
-            # しまう しまう しまう 接尾辞 14 動詞性接尾辞 7 子音動詞ワ行 12 基本形 2 "代表表記:しまう/しまう"
-            verb_like_suffix_words = """
-いる いる いる 接尾辞 14 動詞性接尾辞 7 母音動詞 1 基本形 2 "代表表記:いる/いる"
-おく おく おく 接尾辞 14 動詞性接尾辞 7 子音動詞カ行 2 基本形 2 "代表表記:おく/おく"
-""".split('\n')[1:-1]
-
-            for verb_like_suffix_token_line in verb_like_suffix_words:
-                verb_like_token = change_katuyou(verb_like_suffix_token_line, last_verb_katuyou_form)
-
-                local_ans = []
-                local_ans.extend(tokens[0:last_verb_ind])
-                local_ans.append(last_verb_te_renyou)
-                local_ans.append(verb_like_token)
-                local_ans.extend(tokens[last_verb_ind+1:])
-                ans.append(local_ans)
+        token_lines_lst = get_token_lines_lst_inserted_verb_like_suffix_into(tokens)
+        ans.extend(token_lines_lst)
 
     return ans
