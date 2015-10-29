@@ -185,19 +185,49 @@ def remove_negation_from_naiyouni(token_lines):
 
     return ["hage"]
 
-def remove_negation_from_banning(token_lines):
-    orig_str = "".join(line.split(' ')[0] for line in token_lines)
+#「使用してはいけません」などのタイプであるかどうか
+def is_ikemasen_banning(s):
+    return ("はいけません" in s) or ("はなりません" in s) or ("てはならな" in s) or ("てはいけな" in s)
 
-    if ("はいけません" in orig_str) or ("はなりません" in orig_str) or ("てはならな" in orig_str) or ("てはいけな" in orig_str):
+#「使用しないようにしてください」などのタイプであるか
+def is_naiyouni_banning(s):
+    return ("ないようにしてください" in s)
+
+#「ご使用にはならないでください」
+def is_go_naranaide_banning(s):
+    return (("にならな" in s) or ("にはならな" in s)) and (("お" in s) or "ご" in s)
+
+#「使用しないでください」
+def is_naide_kudasai_banning(s):
+    return ("ないでよ" in s) or ("ないでく" in s) or ("ないで下" in s) or ("ないでね" in s) or ("ないでよ" in s)
+
+#「使用するな」
+def is_suruna_banning(s):
+    return ("な" in s)
+
+def remove_negation_from_banning(token_lines):
+    orig_str = get_orig_str(token_lines)
+
+    #「使用してはいけません」
+    if is_ikemasen_banning(orig_str):
         return remove_negation_from_ikemasen(token_lines)
-    elif ("ないようにしてください" in orig_str):
+
+    #「使用しないようにしてください」
+    elif is_naiyouni_banning(orig_str):
         return remove_negation_from_naiyouni(token_lines)
-    elif (("にならな" in orig_str) or ("にはならな" in orig_str)) and (("お" in orig_str) or "ご" in orig_str):
+
+    #「ご使用にはならないでください」
+    elif is_go_naranaide_banning(orig_str):
         return remove_negation_from_go_naranaide(token_lines)
-    elif ("ないでよ" in orig_str) or ("ないでく" in orig_str) or ("ないで下" in orig_str) or ("ないでね" in orig_str) or ("ないでよ" in orig_str):
+
+    #「使用しないでください」
+    elif is_naide_kudasai_banning(orig_str):
         return remove_negation_from_naide_kudasai(token_lines)
-    elif ("な" in orig_str):
+
+    #「使用するな」
+    elif is_suruna_banning(orig_str):
         return remove_negation_from_suruna(token_lines)
+
     else:
         return token_lines
 
@@ -508,11 +538,21 @@ def replace_token_with_antonym(token_lines, ind, head_token_line):
     return [replace_with_antonym_pairs(token_lines, [antonym_pair]) for antonym_pair in antonym_lst]
 
 
+def get_orig_str(token_lines):
+    return "".join([token_line.split(' ')[0] for token_line in token_lines])
+
 
 #引数として与えられたトークン行にいくつかの動詞性接尾辞(テアル、テオク)を挿入したトークン行のリスト(文字列のリストのリスト)を返す
 def get_token_lines_lst_inserted_verb_like_suffix_into(tokens):
     ans = []
+    orig_str = get_orig_str(tokens)
     verb_lst = [(ind, token_line) for ind, token_line in enumerate(tokens) if token_line.split(' ')[3] == '動詞']
+
+    #「○○してはいけません」の「いけ」は対象外
+    #「○○してはなりません」の「なり」は対象外
+    if is_ikemasen_banning(orig_str):
+        verb_lst = verb_lst[0:-1]
+
 
     #動詞が文中に存在した場合、末尾の動詞を「タ系連用テ形」に変え、動詞性接尾辞「ミル」「オク」「イル」「シマウ」を末尾の動詞の活用形にして結合する。
     if len(verb_lst) != 0:
