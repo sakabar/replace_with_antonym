@@ -94,11 +94,25 @@ def sentence_func(knp_lines):
         if len(wo_to_ni_case_tokens) != 0:
             ans.extend(replace_lib.get_tokens_lst_replaced_with_antonym(wo_to_ni_case_tokens, head_token_ind, head_token_line))
 
+        #ニ格をヲ格に変換した文を生成し、反義語を置き換える
+        #「席に座らないでください」→「席を立っていてください」…?
+        ni_to_wo_case_tokens = [line for line in replace_lib.change_case(knp_lines, 'ニ', 'ヲ', last_chunk_ind) if replace_lib.is_token(line)]
+        if len(ni_to_wo_case_tokens) != 0:
+            ans.extend(replace_lib.get_tokens_lst_replaced_with_antonym(ni_to_wo_case_tokens, head_token_ind, head_token_line))
+
         #ニ格をカラ格に変換した文を生成し、反義語を置き換える
         #「波打ち際に近づかないでください」→「波打ち際から遠ざかってください」
         ni_to_kara_case_tokens = [line for line in replace_lib.change_case(knp_lines, 'ニ', 'カラ', last_chunk_ind) if replace_lib.is_token(line)]
         if len(ni_to_kara_case_tokens) != 0:
             ans.extend(replace_lib.get_tokens_lst_replaced_with_antonym(ni_to_kara_case_tokens, head_token_ind, head_token_line))
+
+        #カラ格をニ格に変換した文を生成し、反義語を置き換える
+        #「波打ち際から遠ざからないでください」→「波打ち際に近づいて(いて)ください」?
+        kara_to_ni_case_tokens = [line for line in replace_lib.change_case(knp_lines, 'カラ', 'ニ', last_chunk_ind) if replace_lib.is_token(line)]
+        if len(kara_to_ni_case_tokens) != 0:
+            ans.extend(replace_lib.get_tokens_lst_replaced_with_antonym(kara_to_ni_case_tokens, head_token_ind, head_token_line))
+
+
 
         ans.extend(replace_lib.get_tokens_lst_replaced_with_antonym(tokens, head_token_ind, head_token_line))
 
