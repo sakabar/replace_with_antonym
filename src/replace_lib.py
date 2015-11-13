@@ -191,7 +191,7 @@ def is_ikemasen_banning(s):
 
 #「使用しないようにしてください」などのタイプであるか
 def is_naiyouni_banning(s):
-    return ("ないようにしてください" in s)
+    return ("ないようにしてください" in s) or ("ないようにして下さい" in s)
 
 #「ご使用にはならないでください」
 def is_go_naranaide_banning(s):
