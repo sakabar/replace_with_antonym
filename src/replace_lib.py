@@ -78,34 +78,34 @@ def remove_negation_from_ikemasen(token_lines):
         if cond_ikemasen:
             new_ind = ind - 4
             ans_lines_before= [] if new_ind == 0 else ans_lines[0:new_ind]
-            ans_lines_after =  ans_lines[ind-2:]
-            verb = change_katuyou(ans_lines[new_ind], "未然形")
+
             ans = ans_lines_before
+            verb = change_katuyou(ans_lines[ind-4], "基本連用形")
             ans.append(verb)
-            ans.append('なければ なければ ない 接尾辞 14 形容詞性述語接尾辞 5 イ形容詞アウオ段 18 基本条件形 6 "代表表記:ない/ない"')
-            ans.extend(ans_lines_after)
+            ans.append('ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"')
+
             return ans
 
         elif cond_naranai:
             new_ind = ind - 3
             ans_lines_before= [] if new_ind == 0 else ans_lines[0:new_ind]
-            ans_lines_after =  ans_lines[ind-1:]
-            verb = change_katuyou(ans_lines[new_ind], "未然形")
+
             ans = ans_lines_before
+            verb = change_katuyou(ans_lines[new_ind], "基本連用形")
             ans.append(verb)
-            ans.append('なければ なければ ない 接尾辞 14 形容詞性述語接尾辞 5 イ形容詞アウオ段 18 基本条件形 6 "代表表記:ない/ない"')
-            ans.extend(ans_lines_after)
+            ans.append('ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"')
+
             return ans
 
         elif cond_ikenai:
             new_ind = ind - 2
             ans_lines_before= [] if new_ind == 0 else ans_lines[0:new_ind]
-            ans_lines_after =  ans_lines[ind:]
-            verb = change_katuyou(ans_lines[new_ind], "未然形")
+
             ans = ans_lines_before
+            verb = change_katuyou(ans_lines[new_ind], "基本連用形")
             ans.append(verb)
-            ans.append('なければ なければ ない 接尾辞 14 形容詞性述語接尾辞 5 イ形容詞アウオ段 18 基本条件形 6 "代表表記:ない/ない"')
-            ans.extend(ans_lines_after)
+            ans.append('ましょう ましょう ます 接尾辞 14 動詞性接尾辞 7 動詞性接尾辞ます型 31 意志形 4 "代表表記:ます/ます"')
+
             return ans
 
 
@@ -191,7 +191,7 @@ def is_ikemasen_banning(s):
 
 #「使用しないようにしてください」などのタイプであるか
 def is_naiyouni_banning(s):
-    return ("ないようにしてください" in s)
+    return ("ないようにしてください" in s) or ("ないようにして下さい" in s)
 
 #「ご使用にはならないでください」
 def is_go_naranaide_banning(s):
